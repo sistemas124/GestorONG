@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-h23vkq14r!ga7m@p^nky_9rz=wwb5ucr5j^x+s1(-7tao--kx1')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # Permite cualquier host en producción (Render, Railway, etc.)
 ALLOWED_HOSTS = ['*']
@@ -58,7 +58,7 @@ ROOT_URLCONF = 'GestorONG.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',  # <--- Faltaba el ".django." aquí
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -118,22 +118,32 @@ USE_TZ = True
 # Archivos estáticos (CSS, JavaScript, Imágenes)
 STATIC_URL = '/static/'
 
-# Permitir que Django busque estáticos dentro de cada app (gestion/static)
+# Buscar archivos estáticos en la carpeta de la app y en carpetas static de la raíz
+STATICFILES_DIRS = [
+    BASE_DIR / 'gestion' / 'static',
+]
+
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-# Rutas adicionales si existen
-STATICFILES_DIRS = [
-    BASE_DIR / 'gestion' / 'static',
-]
-
-# Carpeta de salida para producción
+# Carpeta de salida donde collectstatic agrupa todo para producción
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise permisivo
+# Configuración de almacenamiento para Django + WhiteNoise sin compresión estricta para evitar bloqueos
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+
+# Compatibilidad con versiones de Django anteriores
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
 
 # Configuración para envío de correos (Ejemplo con Gmail)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
