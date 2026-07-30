@@ -118,16 +118,22 @@ USE_TZ = True
 # Archivos estáticos (CSS, JavaScript, Imágenes)
 STATIC_URL = '/static/'
 
-# Carpeta donde Django buscará archivos estáticos adicionales
+# Permitir que Django busque estáticos dentro de cada app (gestion/static)
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
+# Rutas adicionales si existen
 STATICFILES_DIRS = [
     BASE_DIR / 'gestion' / 'static',
 ]
 
-# Carpeta donde Django recopilará los estáticos para producción
+# Carpeta de salida para producción
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise para servir los archivos CSS/JS en Render
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise permisivo
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Configuración para envío de correos (Ejemplo con Gmail)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
