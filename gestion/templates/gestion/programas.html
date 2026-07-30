@@ -1,0 +1,121 @@
+{% extends 'gestion/principal.html' %}
+{% block titulo %}Programas Sociales - Gestor ONG{% endblock %}
+
+{% block contenido %}
+<section class="ftco-section bg-light py-5">
+  <div class="container">
+    <div class="row justify-content-center mb-4">
+      <div class="col-md-8 text-center">
+        <h2>PROGRAMAS SOCIALES</h2>
+        <p>Iniciativas activas y proyectos de impacto social comunitario.</p>
+      </div>
+    </div>
+
+    <div class="row">
+      {% if user.is_authenticated and user.is_staff %}
+      <!-- Formulario para agregar nuevos programas (solo Admin) -->
+      <div class="col-md-4 mb-4">
+        <div class="card shadow-sm p-4">
+          <h4 class="text-primary mb-3">
+            <i class="fa-solid fa-folder-plus mr-1"></i> Nuevo Programa
+          </h4>
+          <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success btn-block mt-3 w-100">
+              <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Programa
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Lista de programas registrados -->
+      <div class="{% if user.is_authenticated and user.is_staff %}col-md-8{% else %}col-md-12{% endif %}">
+        <div class="row">
+          {% for programa in programas %}
+          <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+              <div class="card-body">
+                <h4 class="card-title text-primary font-weight-bold">{{ programa.nombre }}</h4>
+                <p class="card-text text-muted">{{ programa.descripcion }}</p>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <span class="badge badge-info p-2">
+                    <i class="fa-solid fa-bullseye mr-1"></i> Meta: {{ programa.meta_beneficiarios }} beneficiarios
+                  </span>
+                </div>
+              </div>
+              {% if user.is_authenticated and user.is_staff %}
+              <div class="card-footer bg-transparent border-top-0 d-flex justify-content-end align-items-center gap-2 pb-3">
+                <a href="{% url 'editar_programa' programa.id %}" 
+                   class="btn-action-icon edit-btn mr-2" 
+                   title="Editar programa">
+                   <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <a href="{% url 'eliminar_programa' programa.id %}" 
+                   class="btn-action-icon delete-btn" 
+                   title="Eliminar programa"
+                   onclick="confirmarEliminacion(event, this.href, '{{ programa.nombre|escapejs }}')">
+                   <i class="fa-solid fa-trash-can"></i>
+                </a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <div class="alert alert-warning text-center p-4">
+              <i class="fa-solid fa-circle-info mr-1"></i> No hay programas sociales registrados actualmente. 
+              {% if user.is_authenticated and user.is_staff %}Utiliza el formulario de la izquierda para agregar el primero.{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Script para desplegar alertas cuando Django envía mensajes -->
+{% if messages %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    {% for message in messages %}
+      Swal.fire({
+        title: "{% if message.tags == 'error' or message.tags == 'danger' %}¡Atención!{% else %}¡Operación Exitosa!{% endif %}",
+        text: "{{ message|escapejs }}",
+        icon: "{% if message.tags == 'error' or message.tags == 'danger' %}error{% elif message.tags == 'warning' %}warning{% else %}success{% endif %}",
+        confirmButtonColor: '#28a745',
+        confirmButtonText: 'Aceptar',
+        timer: 3000,
+        timerProgressBar: true
+      });
+    {% endfor %}
+  });
+</script>
+{% endif %}
+
+<!-- Script para la confirmación previa al eliminar -->
+<script>
+function confirmarEliminacion(event, url, nombre) {
+  event.preventDefault(); // Cancela la navegación inmediata del enlace
+
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: `Vas a eliminar permanentemente el programa social "${nombre}".`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545', // Rojo
+    cancelButtonColor: '#6c757d',  // Gris
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.location.href = url;
+    }
+  });
+}
+</script>
+{% endblock %}

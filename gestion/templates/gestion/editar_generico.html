@@ -1,0 +1,22 @@
+{% extends 'gestion/principal.html' %}
+{% block titulo %}{{ titulo }} - Gestor ONG{% endblock %}
+
+{% block contenido %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-lg p-4">
+        <h3 class="text-primary mb-4 text-center">{{ titulo }}</h3>
+        <form method="POST">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
+            <a href="javascript:history.back()" class="btn btn-secondary">❌ Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
