@@ -118,18 +118,16 @@ USE_TZ = True
 # Archivos estáticos (CSS, JavaScript, Imágenes)
 STATIC_URL = '/static/'
 
+# Carpeta donde Django buscará archivos estáticos adicionales
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
     BASE_DIR / 'gestion' / 'static',
-    BASE_DIR / 'GestorONG' / 'static',
 ]
 
 # Carpeta donde Django recopilará los estáticos para producción
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Compresión y almacenamiento de archivos estáticos para el servidor web
+# WhiteNoise para servir los archivos CSS/JS en Render
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 
 # Configuración para envío de correos (Ejemplo con Gmail)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
