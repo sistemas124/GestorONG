@@ -1,0 +1,337 @@
+{% extends 'gestion/principal.html' %}
+{% load static %}
+
+{% block titulo %}Inicio - Gestor ONG{% endblock %}
+
+{% block extra_css %}
+<!-- Estilos específicos requeridos para Drag & Drop -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+{% endblock %}
+
+{% block contenido %}
+<div class="hero-wrap" style="background-image: url('{% static 'images/bg_1.jpg' %}');" data-stellar-background-ratio="0.5">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row no-gutters slider-text align-items-center justify-content-center">
+      <div class="col-md-7 ftco-animate text-center">
+        <h1 class="mb-4">Transformando Vidas a través del Voluntariado</h1>
+        <p>
+          <a href="#" onclick="iniciarTour(); return false;" class="btn btn-white btn-outline-white px-4 py-3">
+            <span class="icon-play mr-2"></span>Iniciar Tour de Inducción
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="ftco-section bg-light">
+  <div class="container">
+    
+    <!-- DASHBOARD Y REPORTES DE IMPACTO CON GRÁFICOS E IMÁGENES -->
+    <div id="seccion-dashboard" class="row mb-5">
+      <div class="col-md-12 text-center heading-section ftco-animate mb-4">
+        <h2>Dashboard e Impacto Social</h2>
+        <p>Valores, métricas e indicadores en tiempo real de nuestra gestión comunitaria.</p>
+      </div>
+
+      <!-- Métricas Clave con Imágenes -->
+      <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm overflow-hidden h-100">
+          <div class="row no-gutters h-100 align-items-center">
+            <div class="col-4">
+              <img src="{% static 'images/image_1.jpg' %}" class="card-img" alt="Voluntariado" style="height: 100%; object-fit: cover; min-height: 120px;">
+            </div>
+            <div class="col-8">
+              <div class="card-body py-3">
+                <h6 class="text-muted text-uppercase mb-1">Horas Totales</h6>
+                <strong class="number display-4 font-weight-bold" style="color: #f7531d;">
+                  {{ total_horas|default:"120" }} hrs
+                </strong>
+                <p class="card-text text-muted small mt-1">Trabajo voluntario registrado en proyectos.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm overflow-hidden h-100">
+          <div class="row no-gutters h-100 align-items-center">
+            <div class="col-4">
+              <img src="{% static 'images/image_2.jpg' %}" class="card-img" alt="Comunidad" style="height: 100%; object-fit: cover; min-height: 120px;">
+            </div>
+            <div class="col-8">
+              <div class="card-body py-3">
+                <h6 class="text-muted text-uppercase mb-1">Voluntarios Activos</h6>
+                <strong class="number display-4 font-weight-bold text-success">
+                  {{ total_voluntarios|default:"85" }}%
+                </strong>
+                <p class="card-text text-muted small mt-1">Índice de fidelización y participación.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico 1: Horas por Voluntario (Bar Chart) -->
+      <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm p-3">
+          <h5 class="text-center font-weight-bold mb-3" style="color: #232323;">
+            <i class="fa-solid fa-chart-column text-primary mr-2"></i>Horas Aportadas por Voluntario
+          </h5>
+          <div style="position: relative; height:250px;">
+            <canvas id="chartHoras"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico 2: Recaudación por Donaciones (Doughnut Chart) -->
+      <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm p-3">
+          <h5 class="text-center font-weight-bold mb-3" style="color: #232323;">
+            <i class="fa-solid fa-chart-pie text-success mr-2"></i>Distribución de Donaciones ($)
+          </h5>
+          <div style="position: relative; height:250px;">
+            <canvas id="chartDonaciones"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-5">
+
+    <!-- SECCIÓN: ARRASTRE DE VOLUNTARIOS A TAREAS (jQuery UI + AJAX) -->
+    <div id="seccion-drag" class="row mb-5">
+      <div class="col-md-12 text-center heading-section ftco-animate mb-4">
+        <h2>Asignación de Voluntarios por Habilidades</h2>
+        <p>Arrastra al voluntario hacia la tarea correspondiente según sus habilidades.</p>
+      </div>
+      
+      <!-- Voluntarios para arrastrar -->
+      <div class="col-md-5">
+        <h4 class="text-center mb-3">Voluntarios Disponibles</h4>
+        {% for voluntario in voluntarios %}
+          <div class="voluntario-card bg-white p-3 mb-2 shadow-sm rounded border" data-id="{{ voluntario.id }}" style="cursor: move;">
+            <strong>👤 {{ voluntario.nombre }}</strong> - <i>Habilidad: {{ voluntario.habilidades|default:"General" }}</i>
+          </div>
+        {% empty %}
+          <div class="voluntario-card bg-white p-3 mb-2 shadow-sm rounded border" data-id="1" style="cursor: move;">
+            <strong>👤 Juan Pérez</strong> - <i>Habilidad: Logística y Primeros Auxilios</i>
+          </div>
+          <div class="voluntario-card bg-white p-3 mb-2 shadow-sm rounded border" data-id="2" style="cursor: move;">
+            <strong>👤 María López</strong> - <i>Habilidad: Docencia y Manualidades</i>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Zonas de soltar (Tareas / Actividades) -->
+      <div class="col-md-7">
+        <h4 class="text-center mb-3">Tareas del Evento</h4>
+        {% for actividad in actividades %}
+          <div class="tarea-dropzone bg-white p-4 mb-3 border text-center rounded" data-id="{{ actividad.id }}" style="min-height: 80px; border-style: dashed !important; border-width: 2px !important; border-color: #f7531d !important;">
+            📌 <strong>{{ actividad.nombre }}</strong> (Soltar voluntario aquí)
+          </div>
+        {% empty %}
+          <div class="tarea-dropzone bg-white p-4 mb-3 border text-center rounded" data-id="1" style="min-height: 80px; border-style: dashed !important; border-width: 2px !important; border-color: #f7531d !important;">
+            📌 <strong>Jornada Médica Comunitaria</strong> (Soltar voluntario aquí)
+          </div>
+          <div class="tarea-dropzone bg-white p-4 mb-3 border text-center rounded" data-id="2" style="min-height: 80px; border-style: dashed !important; border-width: 2px !important; border-color: #f7531d !important;">
+            📌 <strong>Taller Educativo Infantil</strong> (Soltar voluntario aquí)
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <hr class="my-5">
+
+    <!-- SECCIÓN: CRONOGRAMA CON FULLCALENDAR -->
+    <div id="seccion-calendar" class="row">
+      <div class="col-md-12 text-center heading-section ftco-animate mb-4">
+        <h2>Cronograma de Jornadas de Voluntariado</h2>
+        <small class="text-muted">💡 TIP: Presiona <kbd>Ctrl + Shift + A</kbd> o <kbd>F2</kbd> para registrar asistencia rápida.</small>
+      </div>
+      <div class="col-md-12 bg-white p-4 shadow-sm rounded">
+        <div id="calendar"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Librería Chart.js para los gráficos dinámicos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- 1. RENDERIZADO DE GRÁFICOS (CHART.JS) CON DATOS DE DJANGO ---
+    
+    const labelsVoluntarios = {{ chart_voluntarios_labels|safe|default:"['Juan Pérez', 'María López', 'Carlos Ruiz', 'Ana Gómez']" }};
+    const dataHoras = {{ chart_voluntarios_data|safe|default:"[35, 28, 42, 15]" }};
+
+    const ctxHoras = document.getElementById('chartHoras').getContext('2d');
+    new Chart(ctxHoras, {
+      type: 'bar',
+      data: {
+        labels: labelsVoluntarios,
+        datasets: [{
+          label: 'Horas Aportadas',
+          data: dataHoras,
+          backgroundColor: 'rgba(247, 83, 29, 0.75)',
+          borderColor: '#f7531d',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    const labelsDonantes = {{ chart_donantes_labels|safe|default:"['Empresas', 'Particulares', 'Subvenciones']" }};
+    const dataDonaciones = {{ chart_donantes_data|safe|default:"[4500, 2300, 1200]" }};
+
+    const ctxDonaciones = document.getElementById('chartDonaciones').getContext('2d');
+    new Chart(ctxDonaciones, {
+      type: 'doughnut',
+      data: {
+        labels: labelsDonantes,
+        datasets: [{
+          data: dataDonaciones,
+          backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545'],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    // --- 2. FullCalendar (CONECTADO A VISTA DJANGO) ---
+    var calendarEl = document.getElementById('calendar');
+    if (calendarEl) {
+      // Lee los eventos dinámicos generados desde views.py
+      var eventosDesdeDjango = {{ eventos_calendario|safe|default:"[]" }};
+
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek'
+        },
+        events: eventosDesdeDjango,
+        eventClick: function(info) {
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              title: info.event.title,
+              text: 'Fecha programada: ' + (info.event.start ? info.event.start.toLocaleDateString() : 'Por confirmar'),
+              icon: 'info',
+              confirmButtonColor: '#f7531d'
+            });
+          } else {
+            alert('Actividad: ' + info.event.title);
+          }
+        }
+      });
+      calendar.render();
+    }
+
+    // --- 3. Drag & Drop con AJAX ---
+    if (typeof $.fn.draggable !== 'undefined') {
+      $(".voluntario-card").draggable({
+        revert: "invalid",
+        cursor: "move"
+      });
+
+      $(".tarea-dropzone").droppable({
+        accept: ".voluntario-card",
+        drop: function(event, ui) {
+          const $zona = $(this);
+          const $card = ui.draggable;
+
+          const voluntarioId = $card.data('id');
+          const tareaId = $zona.data('id');
+          const voluntarioNombre = $card.find('strong').text();
+
+          fetch("{% url 'asignar_voluntario' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+              voluntario_id: voluntarioId,
+              tarea_id: tareaId
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              $zona.addClass("bg-success text-white")
+                   .append("<br>✅ Asignado: " + voluntarioNombre);
+              $card.fadeOut();
+
+              if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                  icon: 'success',
+                  title: '¡Guardado!',
+                  text: data.mensaje,
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+              }
+            } else {
+              if (typeof Swal !== 'undefined') {
+                Swal.fire('Error', data.mensaje, 'error');
+              }
+              $card.css({ top: 0, left: 0 });
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            if (typeof Swal !== 'undefined') {
+              Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
+            }
+          });
+        }
+      });
+    }
+
+    // --- 4. Atajo de teclado NATIVO ---
+    document.addEventListener('keydown', function(event) {
+      const esCtrlShiftA = event.ctrlKey && event.shiftKey && (event.key === 'a' || event.key === 'A');
+      const esF2 = event.key === 'F2';
+
+      if (esCtrlShiftA || esF2) {
+        event.preventDefault();
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            title: '⚡ Asistencia Rápida',
+            input: 'text',
+            inputPlaceholder: 'Ingrese Cédula/ID del Voluntario',
+            showCancelButton: true,
+            confirmButtonColor: '#f7531d',
+            confirmButtonText: 'Registrar'
+          }).then((result) => {
+            if (result.value) {
+              Swal.fire('¡Asistencia Registrada!', 'Voluntario ID: ' + result.value, 'success');
+            }
+          });
+        } else {
+          alert('⌨️ [Atajo Activo]: Asistencia a la jornada registrada exitosamente.');
+        }
+      }
+    });
+
+  });
+</script>
+{% endblock %}

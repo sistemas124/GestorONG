@@ -1,0 +1,33 @@
+{% extends 'gestion/principal.html' %}
+{% block titulo %}Acceso Administrador - Gestor ONG{% endblock %}
+
+{% block contenido %}
+<section class="ftco-section bg-light">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-5 bg-white p-5 shadow-sm rounded">
+        <h3 class="mb-4 text-center">Acceso Administrador</h3>
+        
+        {% if form.errors %}
+          <div class="alert alert-danger">Usuario o contraseña incorrectos.</div>
+        {% endif %}
+
+        <form method="POST">
+          {% csrf_token %}
+          <div class="form-group mb-3">
+            <label><strong>Usuario:</strong></label>
+            <input type="text" name="username" class="form-control" required autofocus>
+          </div>
+          <div class="form-group mb-4">
+            <label><strong>Contraseña:</strong></label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block py-2" style="background-color: #f7531d; border-color: #f7531d;">
+            Ingresar como Admin
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
