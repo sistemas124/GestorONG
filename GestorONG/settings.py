@@ -110,16 +110,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-# --- CONFIGURACIÓN DE ENVÍO DE CORREOS REALES (SMTP) ---
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'jeniffer.chicaiza7566@utc.edu.ec'
-EMAIL_HOST_PASSWORD = 'ucfe agxc vryi sqhq'
-DEFAULT_FROM_EMAIL = 'jeniffer.chicaiza7566@utc.edu.ec'
-EMAIL_TIMEOUT = 25
+# --- CONFIGURACIÓN DE ENVÍO DE CORREOS ---
+# Al utilizar la API REST HTTP de Resend en las vistas (views.py),
+# las peticiones no pasan por el backend SMTP tradicional de Django.
+DEFAULT_FROM_EMAIL = 'onboarding@resend.dev'
 
 LOGIN_REDIRECT_URL = 'inicio'
 LOGOUT_REDIRECT_URL = 'inicio'
