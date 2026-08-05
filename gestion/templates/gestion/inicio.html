@@ -13,13 +13,22 @@
   <div class="overlay"></div>
   <div class="container">
     <div class="row no-gutters slider-text align-items-center justify-content-center">
-      <div class="col-md-7 ftco-animate text-center">
+      <div class="col-md-8 ftco-animate text-center">
         <h1 class="mb-4">Transformando Vidas a través del Voluntariado</h1>
-        <p>
-          <a href="#" onclick="iniciarTour(); return false;" class="btn btn-white btn-outline-white px-4 py-3">
-            <span class="icon-play mr-2"></span>Iniciar Tour de Inducción
+        
+        <!-- BOTONES DE REGISTRO PÚBLICO AGREGADOS -->
+        <p class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+          <a href="{% url 'registro_publico' %}?tipo=Voluntario" class="btn btn-primary px-4 py-3 mr-2 mb-2" style="background-color: #f7531d; border-color: #f7531d;">
+            <i class="fa-solid fa-hand-holding-heart mr-2"></i>Quiero ser Voluntario
+          </a>
+          <a href="{% url 'registro_publico' %}?tipo=Donante" class="btn btn-success px-4 py-3 mr-2 mb-2">
+            <i class="fa-solid fa-circle-dollar-to-slot mr-2"></i>Hacer Donación
+          </a>
+          <a href="#" onclick="iniciarTour(); return false;" class="btn btn-white btn-outline-white px-4 py-3 mb-2">
+            <span class="icon-play mr-2"></span>Iniciar Tour
           </a>
         </p>
+
       </div>
     </div>
   </div>
