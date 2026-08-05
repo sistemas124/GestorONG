@@ -8,7 +8,8 @@
     <div class="col-md-6 bg-white p-4 shadow-sm rounded">
       <h2 class="text-center mb-4">Registro como {{ tipo }}</h2>
       
-      <form method="POST">
+      <!-- Se mantiene el parámetro 'tipo' en la URL del envío POST -->
+      <form method="POST" action="{% url 'registro_publico' %}?tipo={{ tipo }}">
         {% csrf_token %}
         <div class="form-group mb-3">
           <label>Nombre Completo</label>
@@ -28,7 +29,7 @@
         {% else %}
         <div class="form-group mb-3">
           <label>Cédula de Identidad</label>
-          <input type="text" name="cedula" class="form-control" required placeholder="1712345678">
+          <input type="text" name="cedula" class="form-control" placeholder="1712345678">
         </div>
         {% endif %}
 

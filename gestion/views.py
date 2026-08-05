@@ -316,11 +316,6 @@ def asignar_voluntario(request):
       voluntario_id = data.get('voluntario_id')
       tarea_id = data.get('tarea_id')
 
-      print(
-          f'¡RECIBIDO EN SERVIDOR! Voluntario ID: {voluntario_id} -> Tarea ID:'
-          f' {tarea_id}'
-      )
-
       voluntario = Voluntario.objects.get(id=voluntario_id)
 
       if tarea_id:
@@ -350,32 +345,73 @@ def asignar_voluntario(request):
 
 # --- REGISTRO PÚBLICO (UNIRSE) ---
 def registro_publico_view(request):
-  # Recupera 'tipo' verificando primero el cuerpo POST y luego la query GET
   tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
   if request.method == 'POST':
     nombre = request.POST.get('nombre')
     email = request.POST.get('email')
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org')
 
     if tipo == 'Donante':
       monto = request.POST.get('monto', 10)
-      Donante.objects.create(nombre=nombre, email=email, monto_donado=monto)
+      donante = Donante.objects.create(
+          nombre=nombre, email=email, monto_donado=monto
+      )
+
+      # Envío inmediato del correo de confirmación de donación
+      try:
+        send_mail(
+            'Confirmación de Donación - Gestor ONG',
+            (
+                f'Hola {nombre},\n\n¡Muchas gracias por tu contribución'
+                f' generosa de ${monto}!\nTu aporte nos ayuda a seguir'
+                ' transformando vidas a través de nuestras iniciativas'
+                ' sociales.\n\nAtentamente,\nEl equipo de Gestor ONG'
+            ),
+            from_email,
+            [email],
+            fail_silently=True,
+        )
+      except Exception:
+        pass
+
       messages.success(
           request,
           f'¡Gracias por tu donación, {nombre}! Tu aporte de ${monto} ha'
-          ' sido registrado correctamente.',
+          ' sido registrado y hemos enviado el comprobante a tu correo.',
       )
+
     else:
       cedula_ingresada = request.POST.get('cedula')
       cedula_final = (
           cedula_ingresada if cedula_ingresada else f'VOL-{int(time.time())}'
       )
 
-      Voluntario.objects.create(nombre=nombre, email=email, cedula=cedula_final)
+      voluntario = Voluntario.objects.create(
+          nombre=nombre, email=email, cedula=cedula_final
+      )
+
+      # Envío inmediato del correo de bienvenida
+      try:
+        send_mail(
+            'Bienvenido/a al equipo de Voluntarios - Gestor ONG',
+            (
+                f'Hola {nombre},\n\n¡Gracias por registrarte como'
+                ' voluntario/a!\nEstamos entusiasmados de contar con tu apoyo'
+                ' en nuestras próximas actividades.\n\nAtentamente,\nEl equipo'
+                ' de Gestor ONG'
+            ),
+            from_email,
+            [email],
+            fail_silently=True,
+        )
+      except Exception:
+        pass
+
       messages.success(
           request,
           f'¡Gracias por ser voluntario/a, {nombre}! Te has registrado'
-          ' correctamente.',
+          ' correctamente y te enviamos la confirmación a tu correo.',
       )
 
     return redirect('inicio')

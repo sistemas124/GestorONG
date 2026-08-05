@@ -9,6 +9,21 @@
 {% endblock %}
 
 {% block contenido %}
+
+<!-- CONTENEDOR DE MENSAJES DE ALERTA PÚBLICOS (BOOTSTRAP 4) -->
+{% if messages %}
+  <div class="container mt-4">
+    {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'success' }}{% endif %} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 8px;">
+        <strong>Notificación:</strong> {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close" style="outline: none;">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 <div class="hero-wrap" style="background-image: url('{% static 'images/bg_1.jpg' %}');" data-stellar-background-ratio="0.5">
   <div class="overlay"></div>
   <div class="container">
@@ -16,7 +31,7 @@
       <div class="col-md-8 ftco-animate text-center">
         <h1 class="mb-4">Transformando Vidas a través del Voluntariado</h1>
         
-        <!-- BOTONES DE REGISTRO PÚBLICO CORREGIDOS -->
+        <!-- BOTONES DE REGISTRO PÚBLICO -->
         <p class="d-flex flex-wrap justify-content-center gap-2 mt-3">
           <a href="/unirse/?tipo=Voluntario" class="btn btn-primary px-4 py-3 mr-2 mb-2" style="background-color: #f7531d; border-color: #f7531d;">
             <i class="fa-solid fa-hand-holding-heart mr-2"></i>Quiero ser Voluntario
@@ -227,7 +242,6 @@
     // --- 2. FullCalendar (CONECTADO A VISTA DJANGO) ---
     var calendarEl = document.getElementById('calendar');
     if (calendarEl) {
-      // Lee los eventos dinámicos generados desde views.py
       var eventosDesdeDjango = {{ eventos_calendario|safe|default:"[]" }};
 
       var calendar = new FullCalendar.Calendar(calendarEl, {

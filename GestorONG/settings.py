@@ -58,7 +58,7 @@ ROOT_URLCONF = 'GestorONG.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',  # <--- Faltaba el ".django." aquí
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -131,14 +131,21 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-# Configuración para envío de correos (Ejemplo con Gmail)
+# --- CONFIGURACIÓN DE ENVÍO DE CORREOS ---
+
+# Opción 1 (ACTIVA): Envío mediante Gmail SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'jeniffer.chicaiza7566@utc.edu.ec'        # Cambia por tu correo
-EMAIL_HOST_PASSWORD = 'bvfi jkrk xfdj bihc'        # Contraseña de aplicación
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_HOST_USER = 'jeniffer.chicaiza7566@utc.edu.ec'
+EMAIL_HOST_PASSWORD = 'bvfi jkrk xfdj bihc'  # Tu Contraseña de Aplicación de Gmail
+DEFAULT_FROM_EMAIL = 'jeniffer.chicaiza7566@utc.edu.ec'
+
+# Opción 2 (PARA PRUEBAS RÁPIDAS EN CONSOLA): Si Gmail te da error de red o credenciales,
+# descomenta la siguiente línea y el correo saldrá impreso en la terminal inmediatamente:
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 
 LOGIN_REDIRECT_URL = 'inicio'
 LOGOUT_REDIRECT_URL = 'inicio'
