@@ -10,7 +10,6 @@ from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import DonanteForm, ProgramaSocialForm, VoluntarioForm
 from .models import Actividad, Donante, ProgramaSocial, TurnoApoyo, Voluntario
 
 
