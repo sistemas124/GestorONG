@@ -137,7 +137,7 @@ def verificar_admin_view(request):
         f'Estimado Administrador,\n\nSu código de verificación para ingresar es: {codigo}',
         getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
         [email_destino],
-        fail_silently=False,
+        fail_silently=True,
     )
   except Exception as e:
     print(f"Error al enviar código admin: {e}")
@@ -163,7 +163,7 @@ def lista_voluntarios(request):
             f'Hola {voluntario.nombre},\n\nGracias por registrarte como voluntario.',
             getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [voluntario.email],
-            fail_silently=False,
+            fail_silently=True,
         )
       except Exception as e:
         print(f"Error correo voluntario: {e}")
@@ -267,7 +267,7 @@ def lista_donantes(request):
             f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${getattr(donante, "monto_donado", 10)}.\n\n¡Muchas gracias!',
             getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [donante.email],
-            fail_silently=False,
+            fail_silently=True,
         )
       except Exception as e:
         print(f"Error correo donante: {e}")
@@ -339,7 +339,7 @@ def asignar_voluntario(request):
   )
 
 
-# --- REGISTRO PÚBLICO ACTUALIZADO CON HABILIDADES Y HORAS ---
+# --- REGISTRO PÚBLICO CON SILENCIADO MODO FALLO ---
 def registro_publico_view(request):
   tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
@@ -370,24 +370,22 @@ def registro_publico_view(request):
             request, 'gestion/registro_publico.html', {'tipo': tipo}
         )
 
-      try:
-        send_mail(
-            'Confirmación de Donación - Gestor ONG',
-            (
-                f'Hola {nombre},\n\n¡Muchas gracias por tu contribución'
-                f' generosa de ${monto}!'
-            ),
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
-            [email],
-            fail_silently=False,
-        )
-        messages.success(
-            request, f'¡Gracias por tu donación de ${monto}, {nombre}! Te hemos enviado un correo de confirmación.'
-        )
-      except Exception as error_smtp:
-        messages.error(
-            request, f'Donación registrada, pero falló el envío de correo: {error_smtp}'
-        )
+      # Envío con soporte resiliente
+      send_mail(
+          'Confirmación de Donación - Gestor ONG',
+          (
+              f'Hola {nombre},\n\n¡Muchas gracias por tu contribución generosa'
+              f' de ${monto}!'
+          ),
+          getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
+          [email],
+          fail_silently=True,
+      )
+      messages.success(
+          request,
+          f'¡Gracias por tu donación de ${monto}, {nombre}! Registro completado'
+          ' con éxito.',
+      )
 
       return redirect('inicio')
 
@@ -401,7 +399,6 @@ def registro_publico_view(request):
       if hasattr(Voluntario, 'cedula'):
         datos_voluntario['cedula'] = cedula_val
 
-      # Captura de habilidades y horas desde la plantilla pública
       habilidades = request.POST.get('habilidades', '').strip()
       horas_aportadas = request.POST.get('horas_aportadas', 0)
 
@@ -421,29 +418,24 @@ def registro_publico_view(request):
             request, 'gestion/registro_publico.html', {'tipo': tipo}
         )
       except Exception as e:
-        messages.error(
-            request, f'No se pudo completar el registro: {e}'
-        )
+        messages.error(request, f'No se pudo completar el registro: {e}')
         return render(
             request, 'gestion/registro_publico.html', {'tipo': tipo}
         )
 
-      try:
-        send_mail(
-            'Bienvenido/a al equipo de Voluntarios - Gestor ONG',
-            f'Hola {nombre},\n\n¡Gracias por registrarte en nuestra plataforma!',
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
-            [email],
-            fail_silently=False,
-        )
-        messages.success(
-            request,
-            f'¡Gracias por ser voluntario/a, {nombre}! Te hemos enviado un correo de bienvenida.',
-        )
-      except Exception as error_smtp:
-        messages.error(
-            request, f'Registro guardado, pero falló el envío de correo: {error_smtp}'
-        )
+      # Envío con soporte resiliente
+      send_mail(
+          'Bienvenido/a al equipo de Voluntarios - Gestor ONG',
+          f'Hola {nombre},\n\n¡Gracias por registrarte en nuestra plataforma!',
+          getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
+          [email],
+          fail_silently=True,
+      )
+      messages.success(
+          request,
+          f'¡Gracias por ser voluntario/a, {nombre}! Registro completado con'
+          ' éxito.',
+      )
 
       return redirect('inicio')
 
