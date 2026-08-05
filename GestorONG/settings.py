@@ -132,16 +132,13 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # --- CONFIGURACIÓN DE ENVÍO DE CORREOS ---
-
-# Opción 1 (ACTIVA): Envío mediante Gmail SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'jeniffer.chicaiza7566@utc.edu.ec'
-EMAIL_HOST_PASSWORD = 'bvfi jkrk xfdj bihc'  # Tu Contraseña de Aplicación de Gmail
-DEFAULT_FROM_EMAIL = 'jeniffer.chicaiza7566@utc.edu.ec'
-
+EMAIL_HOST_PASSWORD = 'bvfijkrkxfdjbihc'  # Sin espacios entre los caracteres
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # Opción 2 (PARA PRUEBAS RÁPIDAS EN CONSOLA): Si Gmail te da error de red o credenciales,
 # descomenta la siguiente línea y el correo saldrá impreso en la terminal inmediatamente:
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
