@@ -3,22 +3,13 @@ Django settings for GestorONG project.
 """
 
 import os
-import socket
 from pathlib import Path
 import dj_database_url
-
-# --- PARCHE IPv4 PARA RENDER ---
-old_getaddrinfo = socket.getaddrinfo
-def new_getaddrinfo(*args, **kwargs):
-    responses = old_getaddrinfo(*args, **kwargs)
-    return [response for response in responses if response[0] == socket.AF_INET]
-socket.getaddrinfo = new_getaddrinfo
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-h23vkq14r!ga7m@p^nky_9rz=wwb5ucr5j^x+s1(-7tao--kx1')
 
-# --- FORZADO PARA NAVEGAR EL TRACEBACK DE ERRORES ---
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
@@ -93,11 +84,12 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# --- CONFIGURACIÓN SMTP GMAIL ---
+# --- CONFIGURACIÓN SMTP GMAIL CORREGIDA ---
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+EMAIL_TIMEOUT = 10  # Evita bloqueos indefinidos si falla la red
 EMAIL_HOST_USER = 'danielachicaiza936@gmail.com'
 EMAIL_HOST_PASSWORD = 'ucfeagxcvryisqhq'
 

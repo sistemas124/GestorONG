@@ -1,15 +1,43 @@
 import json
 import random
+import threading
 import time
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.http import JsonResponse
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import JsonResponse
 
 from .forms import DonanteForm, ProgramaSocialForm, VoluntarioForm
 from .models import Actividad, Donante, ProgramaSocial, TurnoApoyo, Voluntario
+
+
+def _enviar_correo_asincrono(asunto, mensaje, destinatario):
+    """Función interna que se ejecuta en segundo plano sin bloquear la respuesta web."""
+    if not destinatario:
+        return
+    try:
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', getattr(settings, 'EMAIL_HOST_USER', 'admin@ong.com'))
+        send_mail(
+            subject=asunto,
+            message=mensaje,
+            from_email=from_email,
+            recipient_list=[destinatario],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"Error silencioso enviando correo en segundo plano: {e}")
+
+
+def enviar_correo_background(asunto, mensaje, destinatario):
+    """Lanza el envío de correo en un hilo independiente para evitar errores 500."""
+    thread = threading.Thread(
+        target=_enviar_correo_asincrono,
+        args=(asunto, mensaje, destinatario)
+    )
+    thread.daemon = True
+    thread.start()
 
 
 def inicio_view(request):
@@ -61,6 +89,13 @@ def verificar_admin_view(request):
     codigo = str(random.randint(100000, 999999))
     request.session['codigo_seguridad'] = codigo
 
+    dest = getattr(settings, 'EMAIL_HOST_USER', '')
+    enviar_correo_background(
+        asunto='Código de Seguridad Administrador - ONG',
+        mensaje=f'Estimado Administrador,\n\nSu código de verificación es: {codigo}',
+        destinatario=dest
+    )
+
     return render(request, 'gestion/verificar_admin.html')
 
 
@@ -71,7 +106,14 @@ def lista_voluntarios(request):
     if request.method == 'POST' and request.user.is_authenticated and request.user.is_staff:
         form = VoluntarioForm(request.POST)
         if form.is_valid():
-            form.save()
+            voluntario = form.save()
+            email = getattr(voluntario, 'email', None)
+            if email:
+                enviar_correo_background(
+                    asunto='Bienvenido a la ONG',
+                    mensaje=f'Hola {voluntario.nombre},\n\nGracias por registrarte como voluntario.',
+                    destinatario=email
+                )
             messages.success(request, 'Voluntario registrado con éxito.')
             return redirect('voluntarios')
     return render(request, 'gestion/voluntarios.html', {'voluntarios': voluntarios, 'form': form})
@@ -141,7 +183,15 @@ def lista_donantes(request):
     if request.method == 'POST' and request.user.is_authenticated and request.user.is_staff:
         form = DonanteForm(request.POST)
         if form.is_valid():
-            form.save()
+            donante = form.save()
+            monto = getattr(donante, "monto_donado", 10)
+            email = getattr(donante, 'email', None)
+            if email:
+                enviar_correo_background(
+                    asunto='Comprobante de Donación - Gestor ONG',
+                    mensaje=f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${monto}. ¡Muchas gracias!',
+                    destinatario=email
+                )
             messages.success(request, 'Donante registrado.')
             return redirect('donantes')
     return render(request, 'gestion/donantes.html', {'donantes': donantes, 'form': form})
@@ -183,7 +233,7 @@ def asignar_voluntario(request):
     return JsonResponse({'status': 'error', 'mensaje': 'Petición inválida.'}, status=400)
 
 
-# --- REGISTRO PÚBLICO ULTRA GARANTIZADO ---
+# --- REGISTRO PÚBLICO SEGURO Y CON CORREO ASÍNCRONO ---
 def registro_publico_view(request):
     tipo = request.GET.get('tipo', 'Voluntario')
 
@@ -203,7 +253,6 @@ def registro_publico_view(request):
             except ValueError:
                 monto_val = 10.0
 
-            # Estrategia 1: Uso del Formulario
             form_data = {
                 'nombre': nombre,
                 'email': email,
@@ -215,26 +264,26 @@ def registro_publico_view(request):
             if form.is_valid():
                 form.save()
             else:
-                # Estrategia 2: Guardado directo con asignación dinámica
                 obj = Donante()
                 for field in Donante._meta.fields:
                     fname = field.name
-                    if fname == 'nombre':
-                        setattr(obj, fname, nombre)
-                    elif fname == 'email':
-                        setattr(obj, fname, email)
-                    elif fname in ['monto_donado', 'monto']:
-                        setattr(obj, fname, monto_val)
+                    if fname == 'nombre': setattr(obj, fname, nombre)
+                    elif fname == 'email': setattr(obj, fname, email)
+                    elif fname in ['monto_donado', 'monto']: setattr(obj, fname, monto_val)
                     elif not field.null and field.default == float('nan'):
-                        if field.get_internal_type() in ['CharField', 'TextField']:
-                            setattr(obj, fname, 'N/A')
-                        elif field.get_internal_type() in ['IntegerField', 'FloatField', 'DecimalField']:
-                            setattr(obj, fname, 0)
+                        if field.get_internal_type() in ['CharField', 'TextField']: setattr(obj, fname, 'N/A')
+                        elif field.get_internal_type() in ['IntegerField', 'FloatField', 'DecimalField']: setattr(obj, fname, 0)
                 try:
                     obj.save()
                 except Exception:
-                    # Estrategia 3: Creación mínima
                     Donante.objects.create(nombre=nombre, email=email)
+
+            # Envío de correo en segundo plano
+            enviar_correo_background(
+                asunto='Confirmación de Donación - Gestor ONG',
+                mensaje=f'Hola {nombre},\n\n¡Muchas gracias por tu contribución generosa de ${monto_val}!',
+                destinatario=email
+            )
 
             messages.success(request, f'¡Gracias por tu donación de ${monto_val}, {nombre}! Registro completado con éxito.')
             return redirect('inicio')
@@ -242,7 +291,6 @@ def registro_publico_view(request):
         else:
             cedula_val = request.POST.get('cedula', '').strip() or f'VOL-{int(time.time())}'
             habilidades_val = request.POST.get('habilidades', 'General')
-            horas_val = request.POST.get('horas_aportadas', 5)
 
             form_data = {
                 'nombre': nombre,
@@ -250,8 +298,8 @@ def registro_publico_view(request):
                 'cedula': cedula_val,
                 'habilidades': habilidades_val,
                 'especialidad': habilidades_val,
-                'horas_aportadas': horas_val,
-                'horas': horas_val,
+                'horas_aportadas': 5,
+                'horas': 5,
                 'telefono': request.POST.get('telefono', '0000000000')
             }
             form = VoluntarioForm(form_data)
@@ -261,25 +309,25 @@ def registro_publico_view(request):
                 obj = Voluntario()
                 for field in Voluntario._meta.fields:
                     fname = field.name
-                    if fname == 'nombre':
-                        setattr(obj, fname, nombre)
-                    elif fname == 'email':
-                        setattr(obj, fname, email)
-                    elif fname == 'cedula':
-                        setattr(obj, fname, cedula_val)
-                    elif fname in ['habilidades', 'especialidad']:
-                        setattr(obj, fname, habilidades_val)
-                    elif fname in ['horas_aportadas', 'horas']:
-                        setattr(obj, fname, 5)
+                    if fname == 'nombre': setattr(obj, fname, nombre)
+                    elif fname == 'email': setattr(obj, fname, email)
+                    elif fname == 'cedula': setattr(obj, fname, cedula_val)
+                    elif fname in ['habilidades', 'especialidad']: setattr(obj, fname, habilidades_val)
+                    elif fname in ['horas_aportadas', 'horas']: setattr(obj, fname, 5)
                     elif not field.null:
-                        if field.get_internal_type() in ['CharField', 'TextField']:
-                            setattr(obj, fname, 'General')
-                        elif field.get_internal_type() in ['IntegerField', 'FloatField', 'DecimalField']:
-                            setattr(obj, fname, 0)
+                        if field.get_internal_type() in ['CharField', 'TextField']: setattr(obj, fname, 'General')
+                        elif field.get_internal_type() in ['IntegerField', 'FloatField', 'DecimalField']: setattr(obj, fname, 0)
                 try:
                     obj.save()
                 except Exception:
                     Voluntario.objects.create(nombre=nombre, email=email)
+
+            # Envío de correo en segundo plano
+            enviar_correo_background(
+                asunto='Bienvenido/a al equipo de Voluntarios - Gestor ONG',
+                mensaje=f'Hola {nombre},\n\n¡Gracias por registrarte como voluntario/a en nuestra plataforma!',
+                destinatario=email
+            )
 
             messages.success(request, f'¡Gracias por ser voluntario/a, {nombre}! Registro completado con éxito.')
             return redirect('inicio')
