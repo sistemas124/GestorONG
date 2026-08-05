@@ -9,7 +9,7 @@ import socket
 from pathlib import Path
 import dj_database_url
 
-# --- PARCHE IPv4 PARA RENDER (Evita el error [Errno 101] Network is unreachable) ---
+# --- PARCHE IPv4 PARA RENDER (Evita errores de socket y desconexión por IPv6) ---
 old_getaddrinfo = socket.getaddrinfo
 def new_getaddrinfo(*args, **kwargs):
     responses = old_getaddrinfo(*args, **kwargs)
@@ -110,9 +110,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-# --- CONFIGURACIÓN DE ENVÍO DE CORREOS (OPTIMIZADA PARA RENDER) ---
-# Muestra los correos en la consola de Render en lugar de enviarlos
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# --- CONFIGURACIÓN DE ENVÍO DE CORREOS REALES (SMTP) ---
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
