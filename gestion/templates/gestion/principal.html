@@ -112,6 +112,10 @@
           <li class="nav-item"><a href="{% url 'inicio' %}" class="nav-link">Inicio</a></li>
           <li class="nav-item"><a href="{% url 'programas' %}" class="nav-link">Programas Sociales</a></li>
           
+          <!-- ENLACES PÚBLICOS PARA REGISTRO DE VOLUNTARIOS Y DONANTES -->
+          <li class="nav-item"><a href="{% url 'registro_publico' %}?tipo=Voluntario" class="nav-link text-warning"><i class="fa-solid fa-hand-holding-heart mr-1"></i>Ser Voluntario</a></li>
+          <li class="nav-item"><a href="{% url 'registro_publico' %}?tipo=Donante" class="nav-link text-info"><i class="fa-solid fa-circle-dollar-to-slot mr-1"></i>Hacer Donación</a></li>
+
           {% if user.is_authenticated and user.is_staff %}
             <!-- OPCIONES EXCLUSIVAS DEL ADMINISTRADOR -->
             <li class="nav-item"><a href="{% url 'voluntarios' %}" class="nav-link">Gestión Voluntarios</a></li>
@@ -250,7 +254,7 @@
             element: '#ftco-navbar', 
             popover: { 
               title: '📍 Menú Principal', 
-              description: 'Navega rápidamente entre Programas Sociales, Gestión de Voluntarios y Donaciones.' 
+              description: 'Navega rápidamente entre Programas Sociales, Registro de Voluntarios y Donaciones.' 
             } 
           },
           { 
