@@ -84,16 +84,9 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# --- CONFIGURACIÓN SMTP GMAIL CORREGIDA ---
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_TIMEOUT = 10  # Evita bloqueos indefinidos si falla la red
-EMAIL_HOST_USER = 'danielachicaiza936@gmail.com'
-EMAIL_HOST_PASSWORD = 'ucfeagxcvryisqhq'
-
-DEFAULT_FROM_EMAIL = f'Gestor ONG <{EMAIL_HOST_USER}>'
+# --- CONFIGURACIÓN DE CORREO (Gestionado vía API HTTP en views.py) ---
+EMAIL_HOST_USER = 'jeniffer.chicaiza756@gmail.com'
+DEFAULT_FROM_EMAIL = 'Gestor ONG <onboarding@resend.dev>'
 
 LOGIN_REDIRECT_URL = 'inicio'
 LOGOUT_REDIRECT_URL = 'inicio'

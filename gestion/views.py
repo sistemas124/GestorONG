@@ -1,39 +1,60 @@
 import json
+import os
 import random
 import threading
 import time
+import urllib.request
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import DonanteForm, ProgramaSocialForm, VoluntarioForm
 from .models import Actividad, Donante, ProgramaSocial, TurnoApoyo, Voluntario
 
+# 1. Obtiene la clave EXCLUSIVAMENTE desde las variables de entorno de Render:
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 
-def _enviar_correo_asincrono(asunto, mensaje, destinatario):
-    """Función interna que se ejecuta en segundo plano sin bloquear la respuesta web."""
-    if not destinatario:
+# 2. Correo verificado en tu cuenta de Resend:
+CORREO_DESTINO_TEST = "jeniffer.chicaiza756@gmail.com"
+
+
+def _enviar_correo_resend(asunto, mensaje, destinatario):
+    """Envía un correo mediante la API REST HTTP de Resend."""
+    if not RESEND_API_KEY or not RESEND_API_KEY.startswith("re_"):
+        print("Resend API Key no válida o no configurada en las variables de entorno.")
         return
+
+    # En modo gratuito de Resend, forzamos la dirección a la cuenta registrada para evitar bloqueos
+    destinatario_final = CORREO_DESTINO_TEST if CORREO_DESTINO_TEST else destinatario
+
+    url = "https://api.resend.com/emails"
+    payload = json.dumps({
+        "from": "Gestor ONG <onboarding@resend.dev>",
+        "to": [destinatario_final],
+        "subject": asunto,
+        "text": mensaje
+    }).encode("utf-8")
+
+    headers = {
+        "Authorization": f"Bearer {RESEND_API_KEY}",
+        "Content-Type": "application/json",
+        "User-Agent": "Python-Resend-Client"
+    }
+
+    req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
     try:
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', getattr(settings, 'EMAIL_HOST_USER', 'admin@ong.com'))
-        send_mail(
-            subject=asunto,
-            message=mensaje,
-            from_email=from_email,
-            recipient_list=[destinatario],
-            fail_silently=True,
-        )
+        with urllib.request.urlopen(req) as response:
+            print(f"Correo enviado exitosamente vía Resend HTTP a {destinatario_final}: {response.status}")
     except Exception as e:
-        print(f"Error silencioso enviando correo en segundo plano: {e}")
+        print(f"Error en la petición HTTP a Resend: {e}")
 
 
 def enviar_correo_background(asunto, mensaje, destinatario):
-    """Lanza el envío de correo en un hilo independiente para evitar errores 500."""
+    """Lanza el envío de correo en un hilo independiente."""
     thread = threading.Thread(
-        target=_enviar_correo_asincrono,
+        target=_enviar_correo_resend,
         args=(asunto, mensaje, destinatario)
     )
     thread.daemon = True
@@ -89,7 +110,7 @@ def verificar_admin_view(request):
     codigo = str(random.randint(100000, 999999))
     request.session['codigo_seguridad'] = codigo
 
-    dest = getattr(settings, 'EMAIL_HOST_USER', '')
+    dest = CORREO_DESTINO_TEST
     enviar_correo_background(
         asunto='Código de Seguridad Administrador - ONG',
         mensaje=f'Estimado Administrador,\n\nSu código de verificación es: {codigo}',
@@ -233,7 +254,7 @@ def asignar_voluntario(request):
     return JsonResponse({'status': 'error', 'mensaje': 'Petición inválida.'}, status=400)
 
 
-# --- REGISTRO PÚBLICO SEGURO Y CON CORREO ASÍNCRONO ---
+# --- REGISTRO PÚBLICO SEGURO Y CON CORREO ASÍNCRONO VIA HTTP ---
 def registro_publico_view(request):
     tipo = request.GET.get('tipo', 'Voluntario')
 
@@ -278,7 +299,6 @@ def registro_publico_view(request):
                 except Exception:
                     Donante.objects.create(nombre=nombre, email=email)
 
-            # Envío de correo en segundo plano
             enviar_correo_background(
                 asunto='Confirmación de Donación - Gestor ONG',
                 mensaje=f'Hola {nombre},\n\n¡Muchas gracias por tu contribución generosa de ${monto_val}!',
@@ -322,7 +342,6 @@ def registro_publico_view(request):
                 except Exception:
                     Voluntario.objects.create(nombre=nombre, email=email)
 
-            # Envío de correo en segundo plano
             enviar_correo_background(
                 asunto='Bienvenido/a al equipo de Voluntarios - Gestor ONG',
                 mensaje=f'Hola {nombre},\n\n¡Gracias por registrarte como voluntario/a en nuestra plataforma!',
