@@ -19,7 +19,6 @@ def inicio_view(request):
   actividades = Actividad.objects.all()
   donantes = Donante.objects.all()
 
-  # 1. Total de horas trabajadas
   if hasattr(Voluntario, 'horas_aportadas'):
     total_horas = (
         voluntarios.aggregate(Sum('horas_aportadas'))['horas_aportadas__sum']
@@ -28,7 +27,6 @@ def inicio_view(request):
   else:
     total_horas = voluntarios.count() * 15
 
-  # 2. Porcentaje de fidelización
   total_voluntarios_count = voluntarios.count()
   fidelizacion = (
       round((total_voluntarios_count / 10) * 100)
@@ -36,7 +34,6 @@ def inicio_view(request):
       else 85
   )
 
-  # 3. Gráfico de Horas por Voluntario
   if hasattr(Voluntario, 'horas_aportadas'):
     chart_voluntarios_labels = [v.nombre for v in voluntarios[:5]]
     chart_voluntarios_data = [
@@ -57,7 +54,6 @@ def inicio_view(request):
     ]
     chart_voluntarios_data = [35, 28, 42, 15]
 
-  # 4. Gráfico de Donaciones
   if hasattr(Donante, 'monto_donado'):
     chart_donantes_labels = [d.nombre for d in donantes[:5]]
     chart_donantes_data = [float(d.monto_donado) for d in donantes[:5]]
@@ -69,7 +65,6 @@ def inicio_view(request):
     chart_donantes_labels = ['Empresas', 'Particulares', 'Subvenciones']
     chart_donantes_data = [4500, 2300, 1200]
 
-  # 5. EVENTOS PARA FULLCALENDAR (CALENDARIO)
   eventos_calendario = []
   for act in actividades:
     fecha_str = (
@@ -144,7 +139,7 @@ def verificar_admin_view(request):
         [email_destino],
         fail_silently=True,
     )
-  except Exception:
+  except BaseException:
     pass
 
   return render(request, 'gestion/verificar_admin.html')
@@ -170,7 +165,7 @@ def lista_voluntarios(request):
             [voluntario.email],
             fail_silently=True,
         )
-      except Exception:
+      except BaseException:
         pass
       messages.success(request, 'Voluntario registrado con éxito.')
       return redirect('voluntarios')
@@ -274,7 +269,7 @@ def lista_donantes(request):
             [donante.email],
             fail_silently=True,
         )
-      except Exception:
+      except BaseException:
         pass
       messages.success(request, 'Donante registrado y correo enviado.')
       return redirect('donantes')
@@ -344,16 +339,13 @@ def asignar_voluntario(request):
   )
 
 
-# --- REGISTRO PÚBLICO (UNIRSE) TOTALMENTE BLINDADO ---
+# --- REGISTRO PÚBLICO RESISTENTE A FALLOS DE RED / SMTP ---
 def registro_publico_view(request):
   tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
   if request.method == 'POST':
     nombre = request.POST.get('nombre', '').strip()
     email = request.POST.get('email', '').strip()
-    from_email = getattr(
-        settings, 'DEFAULT_FROM_EMAIL', 'jeniffer.chicaiza7566@utc.edu.ec'
-    )
 
     if not nombre or not email:
       messages.error(
@@ -373,9 +365,7 @@ def registro_publico_view(request):
       try:
         Donante.objects.create(**datos_donante)
       except Exception as e:
-        messages.error(
-            request, f'No se pudo registrar la donación. Detalle: {e}'
-        )
+        messages.error(request, f'No se pudo registrar la donación: {e}')
         return render(
             request, 'gestion/registro_publico.html', {'tipo': tipo}
         )
@@ -385,21 +375,17 @@ def registro_publico_view(request):
             'Confirmación de Donación - Gestor ONG',
             (
                 f'Hola {nombre},\n\n¡Muchas gracias por tu contribución'
-                f' generosa de ${monto}!\nTu aporte nos ayuda a seguir'
-                ' transformando vidas.\n\nAtentamente,\nEl equipo de Gestor'
-                ' ONG'
+                f' generosa de ${monto}!'
             ),
-            from_email,
+            getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [email],
             fail_silently=True,
         )
-      except Exception:
+      except BaseException:
         pass
 
       messages.success(
-          request,
-          f'¡Gracias por tu donación, {nombre}! Tu aporte de ${monto} ha'
-          ' sido registrado exitosamente.',
+          request, f'¡Gracias por tu donación de ${monto}, {nombre}!'
       )
       return redirect('inicio')
 
@@ -418,15 +404,14 @@ def registro_publico_view(request):
       except IntegrityError:
         messages.error(
             request,
-            f'La cédula {cedula_val} ya está registrada en el sistema. Si ya'
-            ' eres voluntario/a, no es necesario volver a registrarte.',
+            f'La cédula {cedula_val} ya está registrada en el sistema.',
         )
         return render(
             request, 'gestion/registro_publico.html', {'tipo': tipo}
         )
       except Exception as e:
         messages.error(
-            request, f'Ocurrió un problema al guardar los datos: {e}'
+            request, f'No se pudo completar el registro: {e}'
         )
         return render(
             request, 'gestion/registro_publico.html', {'tipo': tipo}
@@ -435,16 +420,12 @@ def registro_publico_view(request):
       try:
         send_mail(
             'Bienvenido/a al equipo de Voluntarios - Gestor ONG',
-            (
-                f'Hola {nombre},\n\n¡Gracias por registrarte como'
-                ' voluntario/a!\nEstamos entusiasmados de contar con tu'
-                ' apoyo.\n\nAtentamente,\nEl equipo de Gestor ONG'
-            ),
-            from_email,
+            f'Hola {nombre},\n\n¡Gracias por registrarte!',
+            getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [email],
             fail_silently=True,
         )
-      except Exception:
+      except BaseException:
         pass
 
       messages.success(
