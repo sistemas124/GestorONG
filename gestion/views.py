@@ -17,7 +17,7 @@ from .models import Actividad, Donante, ProgramaSocial, TurnoApoyo, Voluntario
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 
 # 2. Correo verificado en tu cuenta de Resend:
-CORREO_DESTINO_TEST = "jeniffer.chicaiza756@gmail.com"
+CORREO_DESTINO_TEST = "jeniffer.chicaiza756@utc.edu.ec"
 
 
 def _enviar_correo_resend(asunto, mensaje, destinatario):
