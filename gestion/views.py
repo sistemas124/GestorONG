@@ -362,8 +362,7 @@ def registro_publico_view(request):
           request, f'¡Gracias {nombre}! Tu donación ha sido registrada.'
       )
     else:
-      telefono = request.POST.get('telefono', '')
-      Voluntario.objects.create(nombre=nombre, email=email, telefono=telefono)
+      Voluntario.objects.create(nombre=nombre, email=email)
       messages.success(
           request, f'¡Bienvenido/a {nombre}! Te has registrado correctamente.'
       )
