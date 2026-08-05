@@ -344,25 +344,41 @@ def asignar_voluntario(request):
   )
 
 
-# --- REGISTRO PÚBLICO (UNIRSE) CON CONTROL DE ERRORES DE CÉDULA ---
+# --- REGISTRO PÚBLICO (UNIRSE) TOTALMENTE BLINDADO ---
 def registro_publico_view(request):
   tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
   if request.method == 'POST':
-    nombre = request.POST.get('nombre')
-    email = request.POST.get('email')
+    nombre = request.POST.get('nombre', '').strip()
+    email = request.POST.get('email', '').strip()
     from_email = getattr(
         settings, 'DEFAULT_FROM_EMAIL', 'jeniffer.chicaiza7566@utc.edu.ec'
     )
 
+    if not nombre or not email:
+      messages.error(
+          request, 'Por favor, completa todos los campos requeridos.'
+      )
+      return render(
+          request, 'gestion/registro_publico.html', {'tipo': tipo}
+      )
+
     if tipo == 'Donante':
       monto = request.POST.get('monto', 10)
-
       datos_donante = {'nombre': nombre, 'email': email}
+
       if hasattr(Donante, 'monto_donado'):
         datos_donante['monto_donado'] = monto
 
-      Donante.objects.create(**datos_donante)
+      try:
+        Donante.objects.create(**datos_donante)
+      except Exception as e:
+        messages.error(
+            request, f'No se pudo registrar la donación. Detalle: {e}'
+        )
+        return render(
+            request, 'gestion/registro_publico.html', {'tipo': tipo}
+        )
 
       try:
         send_mail(
@@ -377,8 +393,8 @@ def registro_publico_view(request):
             [email],
             fail_silently=True,
         )
-      except Exception as e:
-        print(f'Error enviando correo: {e}')
+      except Exception:
+        pass
 
       messages.success(
           request,
@@ -389,8 +405,7 @@ def registro_publico_view(request):
 
     else:
       datos_voluntario = {'nombre': nombre, 'email': email}
-
-      cedula_ingresada = request.POST.get('cedula')
+      cedula_ingresada = request.POST.get('cedula', '').strip()
       cedula_val = (
           cedula_ingresada if cedula_ingresada else f'VOL-{int(time.time())}'
       )
@@ -409,6 +424,13 @@ def registro_publico_view(request):
         return render(
             request, 'gestion/registro_publico.html', {'tipo': tipo}
         )
+      except Exception as e:
+        messages.error(
+            request, f'Ocurrió un problema al guardar los datos: {e}'
+        )
+        return render(
+            request, 'gestion/registro_publico.html', {'tipo': tipo}
+        )
 
       try:
         send_mail(
@@ -422,8 +444,8 @@ def registro_publico_view(request):
             [email],
             fail_silently=True,
         )
-      except Exception as e:
-        print(f'Error enviando correo: {e}')
+      except Exception:
+        pass
 
       messages.success(
           request,
