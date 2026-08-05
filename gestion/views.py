@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -343,7 +344,7 @@ def asignar_voluntario(request):
   )
 
 
-# --- REGISTRO PÚBLICO (UNIRSE) CON VALIDACIÓN DINÁMICA ---
+# --- REGISTRO PÚBLICO (UNIRSE) CON CONTROL DE ERRORES DE CÉDULA ---
 def registro_publico_view(request):
   tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
@@ -357,14 +358,12 @@ def registro_publico_view(request):
     if tipo == 'Donante':
       monto = request.POST.get('monto', 10)
 
-      # Mapeo dinámico de campos para Donante
       datos_donante = {'nombre': nombre, 'email': email}
       if hasattr(Donante, 'monto_donado'):
         datos_donante['monto_donado'] = monto
 
       Donante.objects.create(**datos_donante)
 
-      # Envío de correo protegido para evitar caída 500
       try:
         send_mail(
             'Confirmación de Donación - Gestor ONG',
@@ -386,9 +385,9 @@ def registro_publico_view(request):
           f'¡Gracias por tu donación, {nombre}! Tu aporte de ${monto} ha'
           ' sido registrado exitosamente.',
       )
+      return redirect('inicio')
 
     else:
-      # Mapeo dinámico de campos para Voluntario
       datos_voluntario = {'nombre': nombre, 'email': email}
 
       cedula_ingresada = request.POST.get('cedula')
@@ -399,9 +398,18 @@ def registro_publico_view(request):
       if hasattr(Voluntario, 'cedula'):
         datos_voluntario['cedula'] = cedula_val
 
-      Voluntario.objects.create(**datos_voluntario)
+      try:
+        Voluntario.objects.create(**datos_voluntario)
+      except IntegrityError:
+        messages.error(
+            request,
+            f'La cédula {cedula_val} ya está registrada en el sistema. Si ya'
+            ' eres voluntario/a, no es necesario volver a registrarte.',
+        )
+        return render(
+            request, 'gestion/registro_publico.html', {'tipo': tipo}
+        )
 
-      # Envío de correo protegido para evitar caída 500
       try:
         send_mail(
             'Bienvenido/a al equipo de Voluntarios - Gestor ONG',
@@ -422,7 +430,6 @@ def registro_publico_view(request):
           f'¡Gracias por ser voluntario/a, {nombre}! Te has registrado'
           ' correctamente.',
       )
-
-    return redirect('inicio')
+      return redirect('inicio')
 
   return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
