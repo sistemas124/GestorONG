@@ -1,9 +1,47 @@
 {% extends 'gestion/principal.html' %}
 {% block titulo %}Gestión Voluntarios - Gestor ONG{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Fuerza espacio para los botones de accion y evita saltos de linea */
+  .acciones-col {
+    white-space: nowrap !important;
+    min-width: 110px !important;
+    width: 110px !important;
+  }
+  
+  .btn-action-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: #fff !important;
+    text-decoration: none !important;
+    margin: 0 2px;
+    transition: all 0.2s ease;
+  }
+  
+  .edit-btn {
+    background-color: #ffc107;
+  }
+  .edit-btn:hover {
+    background-color: #e0a800;
+  }
+
+  .delete-btn {
+    background-color: #dc3545;
+  }
+  .delete-btn:hover {
+    background-color: #c82333;
+  }
+</style>
+{% endblock %}
+
 {% block contenido %}
 <section class="ftco-section bg-light py-5">
-  <div class="container">
+  <div class="container-fluid px-md-4">
     <div class="row justify-content-center mb-4">
       <div class="col-md-8 text-center">
         <h2>Gestión de Voluntarios</h2>
@@ -13,25 +51,25 @@
 
     <div class="row">
       {% if user.is_authenticated and user.is_staff %}
-      <!-- Formulario para agregar voluntarios -->
-      <div class="col-md-4 mb-4">
-        <div class="card shadow-sm p-4">
+      <!-- Formulario optimizado a col-lg-3 -->
+      <div class="col-12 col-lg-3 mb-4">
+        <div class="card shadow-sm p-4 border-0">
           <h4 class="text-primary mb-3">🙋‍♂️ Registrar Voluntario</h4>
           <form method="POST">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="btn btn-success btn-block mt-3 w-100">
-              <i class="fa-solid fa-floppy-disk mr-1"></i> Registrar y Notificar por Correo
+              <i class="fa-solid fa-floppy-disk mr-1"></i> Registrar y Notificar
             </button>
           </form>
         </div>
       </div>
       {% endif %}
 
-      <!-- Tabla de Voluntarios -->
-      <div class="{% if user.is_authenticated and user.is_staff %}col-md-8{% else %}col-md-12{% endif %}">
-        <div class="table-responsive bg-white p-4 shadow-sm rounded">
-          <table class="table table-bordered table-hover">
+      <!-- Tabla optimizada a col-lg-9 con espacio extra -->
+      <div class="col-12 {% if user.is_authenticated and user.is_staff %}col-lg-9{% else %}col-lg-12{% endif %}">
+        <div class="table-responsive bg-white p-3 shadow-sm rounded">
+          <table class="table table-bordered table-hover align-middle mb-0">
             <thead class="bg-dark text-white">
               <tr>
                 <th>Cédula</th>
@@ -40,7 +78,7 @@
                 <th>Habilidades</th>
                 <th>Horas</th>
                 {% if user.is_authenticated and user.is_staff %}
-                <th class="text-center">Acciones</th>
+                <th class="text-center acciones-col">Acciones</th>
                 {% endif %}
               </tr>
             </thead>
@@ -50,27 +88,31 @@
                 <td class="align-middle">{{ voluntario.cedula }}</td>
                 <td class="align-middle">{{ voluntario.nombre }}</td>
                 <td class="align-middle">{{ voluntario.email }}</td>
-                <td class="align-middle"><span class="badge badge-secondary">{{ voluntario.habilidades }}</span></td>
-                <td class="align-middle"><strong>{{ voluntario.horas_aportadas }} hrs</strong></td>
+                <td class="align-middle">
+                  {% if voluntario.habilidades %}
+                    <span class="badge badge-secondary p-2">{{ voluntario.habilidades }}</span>
+                  {% endif %}
+                </td>
+                <td class="align-middle"><strong>{{ voluntario.horas_aportadas|default:"0" }} hrs</strong></td>
                 {% if user.is_authenticated and user.is_staff %}
-                <td class="text-center align-middle">
+                <td class="text-center align-middle acciones-col">
                   <a href="{% url 'editar_voluntario' voluntario.id %}" 
                      class="btn-action-icon edit-btn" 
                      title="Editar voluntario">
-                     <i class="fa-solid fa-pen-to-square"></i>
+                     ✏️
                   </a>
                   <a href="{% url 'eliminar_voluntario' voluntario.id %}" 
                      class="btn-action-icon delete-btn" 
                      title="Eliminar voluntario"
                      onclick="confirmarEliminacion(event, this.href, '{{ voluntario.nombre|escapejs }}')">
-                     <i class="fa-solid fa-trash-can"></i>
+                     🗑️
                   </a>
                 </td>
                 {% endif %}
               </tr>
               {% empty %}
               <tr>
-                <td colspan="6" class="text-center">No hay voluntarios registrados.</td>
+                <td colspan="6" class="text-center py-4">No hay voluntarios registrados.</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -105,15 +147,15 @@
 <!-- Script para la confirmación previa al eliminar -->
 <script>
 function confirmarEliminacion(event, url, nombre) {
-  event.preventDefault(); // Cancela la navegación inmediata del enlace
+  event.preventDefault();
 
   Swal.fire({
     title: '¿Estás seguro?',
     text: `Vas a eliminar permanentemente al voluntario "${nombre}".`,
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonColor: '#dc3545', // Rojo
-    cancelButtonColor: '#6c757d',  // Gris
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
     confirmButtonText: 'Sí, eliminar',
     cancelButtonText: 'Cancelar'
   }).then((result) => {
