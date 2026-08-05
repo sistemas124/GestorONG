@@ -137,10 +137,10 @@ def verificar_admin_view(request):
         f'Estimado Administrador,\n\nSu código de verificación para ingresar es: {codigo}',
         getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
         [email_destino],
-        fail_silently=True,
+        fail_silently=False,
     )
-  except BaseException:
-    pass
+  except Exception as e:
+    print(f"Error al enviar código admin: {e}")
 
   return render(request, 'gestion/verificar_admin.html')
 
@@ -163,10 +163,10 @@ def lista_voluntarios(request):
             f'Hola {voluntario.nombre},\n\nGracias por registrarte como voluntario.',
             getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [voluntario.email],
-            fail_silently=True,
+            fail_silently=False,
         )
-      except BaseException:
-        pass
+      except Exception as e:
+        print(f"Error correo voluntario: {e}")
       messages.success(request, 'Voluntario registrado con éxito.')
       return redirect('voluntarios')
   return render(
@@ -267,10 +267,10 @@ def lista_donantes(request):
             f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${getattr(donante, "monto_donado", 10)}.\n\n¡Muchas gracias!',
             getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [donante.email],
-            fail_silently=True,
+            fail_silently=False,
         )
-      except BaseException:
-        pass
+      except Exception as e:
+        print(f"Error correo donante: {e}")
       messages.success(request, 'Donante registrado y correo enviado.')
       return redirect('donantes')
   return render(
@@ -339,7 +339,7 @@ def asignar_voluntario(request):
   )
 
 
-# --- REGISTRO PÚBLICO RESISTENTE A FALLOS DE RED / SMTP ---
+# --- REGISTRO PÚBLICO CON CAPTURA DE ERRORES SMTP EN SWEETALERT2 ---
 def registro_publico_view(request):
   tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
@@ -370,6 +370,7 @@ def registro_publico_view(request):
             request, 'gestion/registro_publico.html', {'tipo': tipo}
         )
 
+      # Envío de correo capturando el fallo de SMTP de forma explícita
       try:
         send_mail(
             'Confirmación de Donación - Gestor ONG',
@@ -379,14 +380,17 @@ def registro_publico_view(request):
             ),
             getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [email],
-            fail_silently=True,
+            fail_silently=False,  # Fuerza el envío explícito
         )
-      except BaseException:
-        pass
+        messages.success(
+            request, f'¡Gracias por tu donación de ${monto}, {nombre}! Te hemos enviado un correo de confirmación.'
+        )
+      except Exception as error_smtp:
+        # Muestra el error de Gmail en la alerta de SweetAlert2 si falla
+        messages.error(
+            request, f'Donación registrada, pero falló el envío de correo: {error_smtp}'
+        )
 
-      messages.success(
-          request, f'¡Gracias por tu donación de ${monto}, {nombre}!'
-      )
       return redirect('inicio')
 
     else:
@@ -417,22 +421,25 @@ def registro_publico_view(request):
             request, 'gestion/registro_publico.html', {'tipo': tipo}
         )
 
+      # Envío de correo capturando el fallo de SMTP de forma explícita
       try:
         send_mail(
             'Bienvenido/a al equipo de Voluntarios - Gestor ONG',
-            f'Hola {nombre},\n\n¡Gracias por registrarte!',
+            f'Hola {nombre},\n\n¡Gracias por registrarte en nuestra plataforma!',
             getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [email],
-            fail_silently=True,
+            fail_silently=False,  # Fuerza el envío explícito
         )
-      except BaseException:
-        pass
+        messages.success(
+            request,
+            f'¡Gracias por ser voluntario/a, {nombre}! Te hemos enviado un correo de bienvenida.',
+        )
+      except Exception as error_smtp:
+        # Muestra el error de Gmail en la alerta de SweetAlert2 si falla
+        messages.error(
+            request, f'Registro guardado, pero falló el envío de correo: {error_smtp}'
+        )
 
-      messages.success(
-          request,
-          f'¡Gracias por ser voluntario/a, {nombre}! Te has registrado'
-          ' correctamente.',
-      )
       return redirect('inicio')
 
   return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
