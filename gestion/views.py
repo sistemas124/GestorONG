@@ -13,6 +13,23 @@ from .forms import DonanteForm, ProgramaSocialForm, VoluntarioForm
 from .models import Actividad, Donante, ProgramaSocial, TurnoApoyo, Voluntario
 
 
+def enviar_correo_seguro(asunto, mensaje, destinatario):
+    """Envia correos de forma totalmente aislada para evitar que errores SMTP tiren la app."""
+    if not destinatario:
+        return
+    try:
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com')
+        send_mail(
+            subject=asunto,
+            message=mensaje,
+            from_email=from_email,
+            recipient_list=[destinatario],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"Error omitido al enviar correo a {destinatario}: {e}")
+
+
 def inicio_view(request):
     voluntarios = Voluntario.objects.all()
     actividades = Actividad.objects.all()
@@ -62,16 +79,12 @@ def verificar_admin_view(request):
     codigo = str(random.randint(100000, 999999))
     request.session['codigo_seguridad'] = codigo
 
-    try:
-        send_mail(
-            subject='Código de Seguridad Administrador - ONG',
-            message=f'Estimado Administrador,\n\nSu código de verificación es: {codigo}',
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
-            recipient_list=[getattr(settings, 'EMAIL_HOST_USER', '')],
-            fail_silently=True,
-        )
-    except Exception:
-        pass
+    dest = getattr(settings, 'EMAIL_HOST_USER', '')
+    enviar_correo_seguro(
+        asunto='Código de Seguridad Administrador - ONG',
+        mensaje=f'Estimado Administrador,\n\nSu código de verificación es: {codigo}',
+        destinatario=dest
+    )
 
     return render(request, 'gestion/verificar_admin.html')
 
@@ -86,16 +99,11 @@ def lista_voluntarios(request):
             voluntario = form.save()
             email = getattr(voluntario, 'email', None)
             if email:
-                try:
-                    send_mail(
-                        subject='Bienvenido a la ONG',
-                        message=f'Hola {voluntario.nombre},\n\nGracias por registrarte como voluntario.',
-                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
-                        recipient_list=[email],
-                        fail_silently=True,
-                    )
-                except Exception:
-                    pass
+                enviar_correo_seguro(
+                    asunto='Bienvenido a la ONG',
+                    mensaje=f'Hola {voluntario.nombre},\n\nGracias por registrarte como voluntario.',
+                    destinatario=email
+                )
             messages.success(request, 'Voluntario registrado con éxito.')
             return redirect('voluntarios')
     return render(request, 'gestion/voluntarios.html', {'voluntarios': voluntarios, 'form': form})
@@ -169,16 +177,11 @@ def lista_donantes(request):
             monto = getattr(donante, "monto_donado", 10)
             email = getattr(donante, 'email', None)
             if email:
-                try:
-                    send_mail(
-                        subject='Comprobante de Donación - Gestor ONG',
-                        message=f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${monto}. ¡Muchas gracias!',
-                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
-                        recipient_list=[email],
-                        fail_silently=True,
-                    )
-                except Exception:
-                    pass
+                enviar_correo_seguro(
+                    asunto='Comprobante de Donación - Gestor ONG',
+                    mensaje=f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${monto}. ¡Muchas gracias!',
+                    destinatario=email
+                )
             messages.success(request, 'Donante registrado y correo enviado.')
             return redirect('donantes')
     return render(request, 'gestion/donantes.html', {'donantes': donantes, 'form': form})
@@ -220,7 +223,7 @@ def asignar_voluntario(request):
     return JsonResponse({'status': 'error', 'mensaje': 'Petición inválida.'}, status=400)
 
 
-# --- REGISTRO PÚBLICO RESISTENTE A FALLOS DE SCHEMA ---
+# --- REGISTRO PÚBLICO RESISTENTE A FALLOS DE SCHEMA Y SMTP ---
 def registro_publico_view(request):
     tipo = request.GET.get('tipo', 'Voluntario')
     if request.method == 'POST':
@@ -248,16 +251,11 @@ def registro_publico_view(request):
             except Exception as e:
                 print(f"Error BD al crear donante: {e}")
 
-            try:
-                send_mail(
-                    subject='Confirmación de Donación - Gestor ONG',
-                    message=f'Hola {nombre},\n\n¡Muchas gracias por tu contribución generosa de ${monto}!',
-                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
-                    recipient_list=[email],
-                    fail_silently=True,
-                )
-            except Exception:
-                pass
+            enviar_correo_seguro(
+                asunto='Confirmación de Donación - Gestor ONG',
+                mensaje=f'Hola {nombre},\n\n¡Muchas gracias por tu contribución generosa de ${monto}!',
+                destinatario=email
+            )
 
             messages.success(request, f'¡Gracias por tu donación de ${monto}, {nombre}! Registro completado con éxito.')
             return redirect('inicio')
@@ -283,16 +281,11 @@ def registro_publico_view(request):
             except Exception as e:
                 print(f"Error BD al crear voluntario: {e}")
 
-            try:
-                send_mail(
-                    subject='Bienvenido/a al equipo de Voluntarios - Gestor ONG',
-                    message=f'Hola {nombre},\n\n¡Gracias por registrarte como voluntario/a en nuestra plataforma!',
-                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
-                    recipient_list=[email],
-                    fail_silently=True,
-                )
-            except Exception:
-                pass
+            enviar_correo_seguro(
+                asunto='Bienvenido/a al equipo de Voluntarios - Gestor ONG',
+                mensaje=f'Hola {nombre},\n\n¡Gracias por registrarte como voluntario/a en nuestra plataforma!',
+                destinatario=email
+            )
 
             messages.success(request, f'¡Gracias por ser voluntario/a, {nombre}! Registro completado con éxito.')
             return redirect('inicio')
