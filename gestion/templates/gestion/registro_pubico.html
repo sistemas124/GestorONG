@@ -1,0 +1,45 @@
+{% extends 'gestion/base.html' %}
+
+{% block content %}
+<div class="container my-5" style="max-width: 600px;">
+    <div class="card shadow-lg border-0 rounded-3 p-4">
+        <h3 class="text-center fw-bold text-primary mb-3">Unirse a Gestor ONG</h3>
+        <p class="text-muted text-center mb-4">Completa el formulario y nos pondremos en contacto contigo a la brevedad.</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">¿Cómo deseas colaborar?</label>
+                <select name="tipo_registro" class="form-select form-select-lg">
+                    <option value="Voluntario" {% if tipo == 'Voluntario' %}selected{% endif %}>Quiero ser Voluntario</option>
+                    <option value="Donante" {% if tipo == 'Donante' %}selected{% endif %}>Quiero realizar una Donación</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Nombre Completo</label>
+                <input type="text" name="nombre" class="form-control" placeholder="Ej. Ana María Gómez" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Correo Electrónico</label>
+                <input type="email" name="email" class="form-control" placeholder="nombre@correo.com" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Teléfono de Contacto</label>
+                <input type="text" name="telefono" class="form-control" placeholder="Ej. 0991234567">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Mensaje o Comentario</label>
+                <textarea name="mensaje" class="form-control" rows="3" placeholder="Escribe aquí si tienes alguna consulta o disponibilidad de tiempo..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm mt-2">
+                Enviar Solicitud
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

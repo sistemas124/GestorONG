@@ -26,4 +26,8 @@ urlpatterns = [
 
 # Esto fuerza a Django a servir los archivos estáticos automáticamente en desarrollo
 if settings.DEBUG:
+<<<<<<< HEAD
     urlpatterns += staticfiles_urlpatterns()
+=======
+    urlpatterns += staticfiles_urlpatterns()
+>>>>>>> 0a594d2 (Despliegue con PostgreSQL)

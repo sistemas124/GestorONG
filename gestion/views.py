@@ -13,338 +13,413 @@ from .models import Actividad, Donante, ProgramaSocial, TurnoApoyo, Voluntario
 
 
 def inicio_view(request):
-  voluntarios = Voluntario.objects.all()
-  actividades = Actividad.objects.all()
-  donantes = Donante.objects.all()
+    voluntarios = Voluntario.objects.all()
+    actividades = Actividad.objects.all()
+    donantes = Donante.objects.all()
 
-  # 1. Total de horas trabajadas
-  if hasattr(Voluntario, 'horas_aportadas'):
-    total_horas = (
-        voluntarios.aggregate(Sum('horas_aportadas'))['horas_aportadas__sum']
-        or 0
+    # 1. Total de horas trabajadas
+    if hasattr(Voluntario, 'horas_aportadas'):
+        total_horas = (
+            voluntarios.aggregate(Sum('horas_aportadas'))['horas_aportadas__sum']
+            or 0
+        )
+    else:
+        total_horas = voluntarios.count() * 15
+
+    # 2. Porcentaje de fidelización
+    total_voluntarios_count = voluntarios.count()
+    fidelizacion = (
+        round((total_voluntarios_count / 10) * 100)
+        if total_voluntarios_count <= 10
+        else 85
     )
-  else:
-    total_horas = voluntarios.count() * 15
 
-  # 2. Porcentaje de fidelización
-  total_voluntarios_count = voluntarios.count()
-  fidelizacion = (
-      round((total_voluntarios_count / 10) * 100)
-      if total_voluntarios_count <= 10
-      else 85
-  )
+    # 3. Gráfico de Horas por Voluntario
+    if hasattr(Voluntario, 'horas_aportadas'):
+        chart_voluntarios_labels = [v.nombre for v in voluntarios[:5]]
+        chart_voluntarios_data = [
+            getattr(v, 'horas_aportadas', 20) for v in voluntarios[:5]
+        ]
+    else:
+        chart_voluntarios_labels = [v.nombre for v in voluntarios[:5]]
+        chart_voluntarios_data = [35, 28, 42, 15, 20][: len(
+            chart_voluntarios_labels
+        )]
 
-  # 3. Gráfico de Horas por Voluntario
-  if hasattr(Voluntario, 'horas_aportadas'):
-    chart_voluntarios_labels = [v.nombre for v in voluntarios[:5]]
-    chart_voluntarios_data = [
-        getattr(v, 'horas_aportadas', 20) for v in voluntarios[:5]
-    ]
-  else:
-    chart_voluntarios_labels = [v.nombre for v in voluntarios[:5]]
-    chart_voluntarios_data = [35, 28, 42, 15, 20][: len(
-        chart_voluntarios_labels
-    )]
+    if not chart_voluntarios_labels:
+        chart_voluntarios_labels = [
+            'Juan Pérez',
+            'María López',
+            'Carlos Ruiz',
+            'Ana Gómez',
+        ]
+        chart_voluntarios_data = [35, 28, 42, 15]
 
-  if not chart_voluntarios_labels:
-    chart_voluntarios_labels = [
-        'Juan Pérez',
-        'María López',
-        'Carlos Ruiz',
-        'Ana Gómez',
-    ]
-    chart_voluntarios_data = [35, 28, 42, 15]
+    # 4. Gráfico de Donaciones
+    if hasattr(Donante, 'monto_donado'):
+        chart_donantes_labels = [d.nombre for d in donantes[:5]]
+        chart_donantes_data = [float(d.monto_donado) for d in donantes[:5]]
+    else:
+        chart_donantes_labels = ['Empresas', 'Particulares', 'Subvenciones']
+        chart_donantes_data = [4500, 2300, 1200]
 
-  # 4. Gráfico de Donaciones
-  if hasattr(Donante, 'monto_donado'):
-    chart_donantes_labels = [d.nombre for d in donantes[:5]]
-    chart_donantes_data = [float(d.monto_donado) for d in donantes[:5]]
-  else:
-    chart_donantes_labels = ['Empresas', 'Particulares', 'Subvenciones']
-    chart_donantes_data = [4500, 2300, 1200]
+    if not chart_donantes_labels:
+        chart_donantes_labels = ['Empresas', 'Particulares', 'Subvenciones']
+        chart_donantes_data = [4500, 2300, 1200]
 
-  if not chart_donantes_labels:
-    chart_donantes_labels = ['Empresas', 'Particulares', 'Subvenciones']
-    chart_donantes_data = [4500, 2300, 1200]
-
-  # 5. EVENTOS PARA FULLCALENDAR (CALENDARIO)
-  eventos_calendario = []
-  for act in actividades:
-    # Intenta obtener la fecha del objeto o asigna una por defecto en Julio 2026
-    fecha_str = (
-        act.fecha.strftime('%Y-%m-%d')
-        if hasattr(act, 'fecha') and act.fecha
-        else '2026-07-28'
-    )
-    eventos_calendario.append({
-        'title': act.nombre,
-        'start': fecha_str,
-        'color': '#f7531d',
-    })
-
-  # Si aún no tienes actividades guardadas en la BD, genera estos datos de prueba para julio 2026:
-  if not eventos_calendario:
-    eventos_calendario = [
-        {
-            'title': '📌 Jornada Médica Comunitaria',
-            'start': '2026-07-28',
+    # 5. EVENTOS PARA FULLCALENDAR (CALENDARIO)
+    eventos_calendario = []
+    for act in actividades:
+        fecha_str = (
+            act.fecha.strftime('%Y-%m-%d')
+            if hasattr(act, 'fecha') and act.fecha
+            else '2026-07-28'
+        )
+        eventos_calendario.append({
+            'title': act.nombre,
+            'start': fecha_str,
             'color': '#f7531d',
-        },
-        {
-            'title': '📚 Taller Educativo Infantil',
-            'start': '2026-07-30',
-            'color': '#28a745',
-        },
-        {
-            'title': '🌱 Recolección y Limpieza',
-            'start': '2026-08-02',
-            'color': '#17a2b8',
-        },
-    ]
+        })
 
-  contexto = {
-      'voluntarios': voluntarios,
-      'actividades': actividades,
-      'total_horas': total_horas,
-      'total_voluntarios': fidelizacion,
-      'chart_voluntarios_labels': json.dumps(chart_voluntarios_labels),
-      'chart_voluntarios_data': json.dumps(chart_voluntarios_data),
-      'chart_donantes_labels': json.dumps(chart_donantes_labels),
-      'chart_donantes_data': json.dumps(chart_donantes_data),
-      # Pasamos el array de eventos como JSON para el Javascript de FullCalendar
-      'eventos_calendario': json.dumps(eventos_calendario),
-  }
+    if not eventos_calendario:
+        eventos_calendario = [
+            {
+                'title': '📌 Jornada Médica Comunitaria',
+                'start': '2026-07-28',
+                'color': '#f7531d',
+            },
+            {
+                'title': '📚 Taller Educativo Infantil',
+                'start': '2026-07-30',
+                'color': '#28a745',
+            },
+            {
+                'title': '🌱 Recolección y Limpieza',
+                'start': '2026-08-02',
+                'color': '#17a2b8',
+            },
+        ]
 
-  return render(request, 'gestion/inicio.html', contexto)
+    contexto = {
+        'voluntarios': voluntarios,
+        'actividades': actividades,
+        'total_horas': total_horas,
+        'total_voluntarios': fidelizacion,
+        'chart_voluntarios_labels': json.dumps(chart_voluntarios_labels),
+        'chart_voluntarios_data': json.dumps(chart_voluntarios_data),
+        'chart_donantes_labels': json.dumps(chart_donantes_labels),
+        'chart_donantes_data': json.dumps(chart_donantes_data),
+        'eventos_calendario': json.dumps(eventos_calendario),
+    }
+
+    return render(request, 'gestion/inicio.html', contexto)
 
 
 def verificar_admin_view(request):
-  if request.method == 'POST':
-    codigo_ingresado = request.POST.get('codigo')
-    codigo_guardado = request.session.get('codigo_seguridad')
+    if request.method == 'POST':
+        codigo_ingresado = request.POST.get('codigo')
+        codigo_guardado = request.session.get('codigo_seguridad')
 
-    if codigo_ingresado == codigo_guardado:
-      messages.success(request, '¡Acceso concedido correctamente!')
-      return redirect('inicio')
-    else:
-      messages.error(request, 'El código ingresado es incorrecto o expiró.')
+        if codigo_ingresado == codigo_guardado:
+            messages.success(request, '¡Acceso concedido correctamente!')
+            return redirect('inicio')
+        else:
+            messages.error(request, 'El código ingresado es incorrecto o expiró.')
 
-  codigo = str(random.randint(100000, 999999))
-  request.session['codigo_seguridad'] = codigo
+    codigo = str(random.randint(100000, 999999))
+    request.session['codigo_seguridad'] = codigo
 
-  try:
-    email_destino = (
-        request.user.email
-        if request.user.is_authenticated
-        else 'admin@gmail.com'
-    )
-    send_mail(
-        'Código de Seguridad Administrador - ONG',
-        f'Estimado Administrador,\n\nSu código de verificación para ingresar es: {codigo}',
-        'admin@ong.org',
-        [email_destino],
-        fail_silently=True,
-    )
-  except Exception:
-    pass
+    try:
+        email_destino = (
+            request.user.email
+            if request.user.is_authenticated
+            else getattr(settings, 'EMAIL_HOST_USER', 'jeniffer.chicaiza7566@utc.edu.ec')
+        )
+        send_mail(
+            'Código de Seguridad Administrador - ONG',
+            f'Estimado Administrador,\n\nSu código de verificación para ingresar es: {codigo}',
+            getattr(settings, 'DEFAULT_FROM_EMAIL', email_destino),
+            [email_destino],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
 
-  return render(request, 'gestion/verificar_admin.html')
+    return render(request, 'gestion/verificar_admin.html')
 
 
 # --- VOLUNTARIOS ---
 def lista_voluntarios(request):
-  voluntarios = Voluntario.objects.all()
-  form = VoluntarioForm()
-  if (
-      request.method == 'POST'
-      and request.user.is_authenticated
-      and request.user.is_staff
-  ):
-    form = VoluntarioForm(request.POST)
-    if form.is_valid():
-      voluntario = form.save()
-      try:
-        send_mail(
-            'Bienvenido a la ONG',
-            f'Hola {voluntario.nombre},\n\nGracias por registrarte como voluntario.',
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
-            [voluntario.email],
-            fail_silently=True,
-        )
-      except Exception:
-        pass
-      messages.success(request, 'Voluntario registrado con éxito.')
-      return redirect('voluntarios')
-  return render(
-      request,
-      'gestion/voluntarios.html',
-      {'voluntarios': voluntarios, 'form': form},
-  )
+    voluntarios = Voluntario.objects.all()
+    form = VoluntarioForm()
+    if (
+        request.method == 'POST'
+        and request.user.is_authenticated
+        and request.user.is_staff
+    ):
+        form = VoluntarioForm(request.POST)
+        if form.is_valid():
+            voluntario = form.save()
+            try:
+                send_mail(
+                    'Bienvenido a la ONG',
+                    f'Hola {voluntario.nombre},\n\nGracias por registrarte como voluntario.',
+                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
+                    [voluntario.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
+            messages.success(request, 'Voluntario registrado con éxito.')
+            return redirect('voluntarios')
+    return render(
+        request,
+        'gestion/voluntarios.html',
+        {'voluntarios': voluntarios, 'form': form},
+    )
 
 
 @login_required
 def editar_voluntario(request, id):
-  voluntario = get_object_or_404(Voluntario, id=id)
-  if request.method == 'POST':
-    form = VoluntarioForm(request.POST, instance=voluntario)
-    if form.is_valid():
-      form.save()
-      messages.success(request, 'Voluntario actualizado.')
-      return redirect('voluntarios')
-  else:
-    form = VoluntarioForm(instance=voluntario)
-  return render(
-      request,
-      'gestion/editar_generico.html',
-      {'form': form, 'titulo': 'Editar Voluntario'},
-  )
+    voluntario = get_object_or_404(Voluntario, id=id)
+    if request.method == 'POST':
+        form = VoluntarioForm(request.POST, instance=voluntario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Voluntario actualizado.')
+            return redirect('voluntarios')
+    else:
+        form = VoluntarioForm(instance=voluntario)
+    return render(
+        request,
+        'gestion/editar_generico.html',
+        {'form': form, 'titulo': 'Editar Voluntario'},
+    )
 
 
 @login_required
 def eliminar_voluntario(request, id):
-  voluntario = get_object_or_404(Voluntario, id=id)
-  voluntario.delete()
-  messages.success(request, 'Voluntario eliminado.')
-  return redirect('voluntarios')
+    voluntario = get_object_or_404(Voluntario, id=id)
+    voluntario.delete()
+    messages.success(request, 'Voluntario eliminado.')
+    return redirect('voluntarios')
 
 
 # --- PROGRAMAS SOCIALES ---
 def lista_programas(request):
-  programas = ProgramaSocial.objects.all()
-  form = ProgramaSocialForm()
-  if (
-      request.method == 'POST'
-      and request.user.is_authenticated
-      and request.user.is_staff
-  ):
-    form = ProgramaSocialForm(request.POST)
-    if form.is_valid():
-      form.save()
-      messages.success(request, 'Programa creado con éxito.')
-      return redirect('programas')
-  return render(
-      request,
-      'gestion/programas.html',
-      {'programas': programas, 'form': form},
-  )
+    programas = ProgramaSocial.objects.all()
+    form = ProgramaSocialForm()
+    if (
+        request.method == 'POST'
+        and request.user.is_authenticated
+        and request.user.is_staff
+    ):
+        form = ProgramaSocialForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Programa creado con éxito.')
+            return redirect('programas')
+    return render(
+        request,
+        'gestion/programas.html',
+        {'programas': programas, 'form': form},
+    )
 
 
 @login_required
 def editar_programa(request, id):
-  programa = get_object_or_404(ProgramaSocial, id=id)
-  if request.method == 'POST':
-    form = ProgramaSocialForm(request.POST, instance=programa)
-    if form.is_valid():
-      form.save()
-      messages.success(request, 'Programa actualizado.')
-      return redirect('programas')
-  else:
-    form = ProgramaSocialForm(instance=programa)
-  return render(
-      request,
-      'gestion/editar_generico.html',
-      {'form': form, 'titulo': 'Editar Programa Social'},
-  )
+    programa = get_object_or_404(ProgramaSocial, id=id)
+    if request.method == 'POST':
+        form = ProgramaSocialForm(request.POST, instance=programa)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Programa actualizado.')
+            return redirect('programas')
+    else:
+        form = ProgramaSocialForm(instance=programa)
+    return render(
+        request,
+        'gestion/editar_generico.html',
+        {'form': form, 'titulo': 'Editar Programa Social'},
+    )
 
 
 @login_required
 def eliminar_programa(request, id):
-  programa = get_object_or_404(ProgramaSocial, id=id)
-  programa.delete()
-  messages.success(request, 'Programa eliminado.')
-  return redirect('programas')
+    programa = get_object_or_404(ProgramaSocial, id=id)
+    programa.delete()
+    messages.success(request, 'Programa eliminado.')
+    return redirect('programas')
 
 
 # --- DONANTES ---
 def lista_donantes(request):
-  donantes = Donante.objects.all()
-  form = DonanteForm()
-  if (
-      request.method == 'POST'
-      and request.user.is_authenticated
-      and request.user.is_staff
-  ):
-    form = DonanteForm(request.POST)
-    if form.is_valid():
-      donante = form.save()
-      try:
-        send_mail(
-            'Comprobante de Donación - Gestor ONG',
-            f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${donante.monto_donado}.\n\n¡Muchas gracias!',
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
-            [donante.email],
-            fail_silently=True,
-        )
-      except Exception:
-        pass
-      messages.success(request, 'Donante registrado y correo enviado.')
-      return redirect('donantes')
-  return render(
-      request, 'gestion/donantes.html', {'donantes': donantes, 'form': form}
-  )
+    donantes = Donante.objects.all()
+    form = DonanteForm()
+    if (
+        request.method == 'POST'
+        and request.user.is_authenticated
+        and request.user.is_staff
+    ):
+        form = DonanteForm(request.POST)
+        if form.is_valid():
+            donante = form.save()
+            try:
+                send_mail(
+                    'Comprobante de Donación - Gestor ONG',
+                    f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${donante.monto_donado}.\n\n¡Muchas gracias!',
+                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
+                    [donante.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
+            messages.success(request, 'Donante registrado y correo enviado.')
+            return redirect('donantes')
+    return render(
+        request, 'gestion/donantes.html', {'donantes': donantes, 'form': form}
+    )
 
 
 @login_required
 def editar_donante(request, id):
-  donante = get_object_or_404(Donante, id=id)
-  if request.method == 'POST':
-    form = DonanteForm(request.POST, instance=donante)
-    if form.is_valid():
-      form.save()
-      messages.success(request, 'Donante actualizado.')
-      return redirect('donantes')
-  else:
-    form = DonanteForm(instance=donante)
-  return render(
-      request,
-      'gestion/editar_generico.html',
-      {'form': form, 'titulo': 'Editar Donante'},
-  )
+    donante = get_object_or_404(Donante, id=id)
+    if request.method == 'POST':
+        form = DonanteForm(request.POST, instance=donante)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Donante actualizado.')
+            return redirect('donantes')
+    else:
+        form = DonanteForm(instance=donante)
+    return render(
+        request,
+        'gestion/editar_generico.html',
+        {'form': form, 'titulo': 'Editar Donante'},
+    )
 
 
 @login_required
 def eliminar_donante(request, id):
-  donante = get_object_or_404(Donante, id=id)
-  donante.delete()
-  messages.success(request, 'Donante eliminado.')
-  return redirect('donantes')
+    donante = get_object_or_404(Donante, id=id)
+    donante.delete()
+    messages.success(request, 'Donante eliminado.')
+    return redirect('donantes')
 
 
 # --- VISTA PARA ASIGNACIÓN VÍA AJAX ---
 def asignar_voluntario(request):
-  if request.method == 'POST':
-    try:
-      data = json.loads(request.body)
-      voluntario_id = data.get('voluntario_id')
-      tarea_id = data.get('tarea_id')
-
-      print(
-          f'¡RECIBIDO EN SERVIDOR! Voluntario ID: {voluntario_id} -> Tarea ID:'
-          f' {tarea_id}'
-      )
-
-      voluntario = Voluntario.objects.get(id=voluntario_id)
-
-      if tarea_id:
+    if request.method == 'POST':
         try:
-          actividad = Actividad.objects.get(id=tarea_id)
-        except Actividad.DoesNotExist:
-          pass
+            data = json.loads(request.body)
+            voluntario_id = data.get('voluntario_id')
+            tarea_id = data.get('tarea_id')
 
-      return JsonResponse({
-          'status': 'success',
-          'mensaje': (
-              f'Se asignó exitosamente al voluntario {voluntario.nombre}.'
-          ),
-      })
+            print(
+                f'¡RECIBIDO EN SERVIDOR! Voluntario ID: {voluntario_id} -> Tarea ID:'
+                f' {tarea_id}'
+            )
 
-    except Voluntario.DoesNotExist:
-      return JsonResponse(
-          {'status': 'error', 'mensaje': 'El voluntario no existe.'}, status=400
-      )
-    except Exception as e:
-      return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
+            voluntario = Voluntario.objects.get(id=voluntario_id)
 
-  return JsonResponse(
-      {'status': 'error', 'mensaje': 'Petición inválida.'}, status=400
-  )
+            if tarea_id:
+                try:
+                    actividad = Actividad.objects.get(id=tarea_id)
+                except Actividad.DoesNotExist:
+                    pass
+
+            return JsonResponse({
+                'status': 'success',
+                'mensaje': (
+                    f'Se asignó exitosamente al voluntario {voluntario.nombre}.'
+                ),
+            })
+
+        except Voluntario.DoesNotExist:
+            return JsonResponse(
+                {'status': 'error', 'mensaje': 'El voluntario no existe.'}, status=400
+            )
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=500)
+
+    return JsonResponse(
+        {'status': 'error', 'mensaje': 'Petición inválida.'}, status=400
+    )
+
+
+# --- NUEVA VISTA PÚBLICA DE REGISTRO (VOLUNTARIO / DONANTE) ---
+def registro_publico_view(request):
+    """
+    Permite a un usuario visitante registrarse como Voluntario o Donante.
+    Envía una notificación al correo del administrador (jeniffer.chicaiza7566@utc.edu.ec)
+    y una confirmación al usuario.
+    """
+    tipo = request.GET.get('tipo', 'Voluntario')
+
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        email = request.POST.get('email')
+        telefono = request.POST.get('telefono', '')
+        tipo_registro = request.POST.get('tipo_registro', tipo)
+        mensaje_usuario = request.POST.get('mensaje', '')
+
+        # Guardar en base de datos
+        if tipo_registro == 'Voluntario':
+            Voluntario.objects.create(
+                nombre=nombre,
+                email=email,
+                telefono=telefono
+            )
+        elif tipo_registro == 'Donante':
+            monto = request.POST.get('monto', 0)
+            Donante.objects.create(
+                nombre=nombre,
+                email=email,
+                monto_donado=monto if monto else 0
+            )
+
+        # Correo de notificación hacia ti (Administrador)
+        admin_email = getattr(settings, 'EMAIL_HOST_USER', 'jeniffer.chicaiza7566@utc.edu.ec')
+        asunto_admin = f"Nueva Solicitud de {tipo_registro}: {nombre}"
+        cuerpo_admin = (
+            f"¡Hola Admin!\n\nSe ha recibido una nueva solicitud desde la web:\n\n"
+            f"• Tipo: {tipo_registro}\n"
+            f"• Nombre: {nombre}\n"
+            f"• Email: {email}\n"
+            f"• Teléfono: {telefono}\n"
+            f"• Mensaje / Nota: {mensaje_usuario}\n"
+        )
+        try:
+            send_mail(
+                asunto_admin,
+                cuerpo_admin,
+                admin_email,
+                [admin_email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+        # Correo de confirmación al usuario
+        asunto_user = "¡Gracias por unirte a Gestor ONG!"
+        cuerpo_user = (
+            f"Hola {nombre},\n\n"
+            f"Hemos recibido tu registro correctamente como {tipo_registro}.\n"
+            f"Pronto nos pondremos en contacto contigo.\n\n"
+            f"Atentamente,\nEquipo Gestor ONG"
+        )
+        try:
+            send_mail(
+                asunto_user,
+                cuerpo_user,
+                admin_email,
+                [email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+        messages.success(request, f'¡Gracias {nombre}! Tu solicitud como {tipo_registro} ha sido registrada.')
+        return redirect('inicio')
+
+    return render(request, 'gestion/registro_publico.html', {'tipo': tipo})

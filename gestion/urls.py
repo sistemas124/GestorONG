@@ -27,4 +27,7 @@ urlpatterns = [
 
     # NUEVA RUTA PARA AJAX: Asignar voluntario a programa/tarea
     path('asignar-voluntario/', views.asignar_voluntario, name='asignar_voluntario'),
+
+    # REGISTRO PÚBLICO (Voluntarios y Donantes)
+    path('unirse/', views.registro_publico_view, name='registro_publico'),
 ]
