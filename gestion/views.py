@@ -1,5 +1,6 @@
 import json
 import random
+import time
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -362,7 +363,14 @@ def registro_publico_view(request):
           request, f'¡Gracias {nombre}! Tu donación ha sido registrada.'
       )
     else:
-      Voluntario.objects.create(nombre=nombre, email=email)
+      cedula_ingresada = request.POST.get('cedula')
+      cedula_final = (
+          cedula_ingresada
+          if cedula_ingresada
+          else f'VOL-{int(time.time())}'
+      )
+
+      Voluntario.objects.create(nombre=nombre, email=email, cedula=cedula_final)
       messages.success(
           request, f'¡Bienvenido/a {nombre}! Te has registrado correctamente.'
       )
