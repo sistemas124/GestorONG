@@ -139,7 +139,7 @@ def verificar_admin_view(request):
     send_mail(
         'Código de Seguridad Administrador - ONG',
         f'Estimado Administrador,\n\nSu código de verificación para ingresar es: {codigo}',
-        'admin@ong.org',
+        getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
         [email_destino],
         fail_silently=True,
     )
@@ -268,7 +268,7 @@ def lista_donantes(request):
       try:
         send_mail(
             'Comprobante de Donación - Gestor ONG',
-            f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${donante.monto_donado}.\n\n¡Muchas gracias!',
+            f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${getattr(donante, "monto_donado", 10)}.\n\n¡Muchas gracias!',
             getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org'),
             [donante.email],
             fail_silently=True,
@@ -343,75 +343,84 @@ def asignar_voluntario(request):
   )
 
 
-# --- REGISTRO PÚBLICO (UNIRSE) ---
+# --- REGISTRO PÚBLICO (UNIRSE) CON VALIDACIÓN DINÁMICA ---
 def registro_publico_view(request):
   tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
   if request.method == 'POST':
     nombre = request.POST.get('nombre')
     email = request.POST.get('email')
-    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.org')
+    from_email = getattr(
+        settings, 'DEFAULT_FROM_EMAIL', 'jeniffer.chicaiza7566@utc.edu.ec'
+    )
 
     if tipo == 'Donante':
       monto = request.POST.get('monto', 10)
-      donante = Donante.objects.create(
-          nombre=nombre, email=email, monto_donado=monto
-      )
 
-      # Envío inmediato del correo de confirmación de donación
+      # Mapeo dinámico de campos para Donante
+      datos_donante = {'nombre': nombre, 'email': email}
+      if hasattr(Donante, 'monto_donado'):
+        datos_donante['monto_donado'] = monto
+
+      Donante.objects.create(**datos_donante)
+
+      # Envío de correo protegido para evitar caída 500
       try:
         send_mail(
             'Confirmación de Donación - Gestor ONG',
             (
                 f'Hola {nombre},\n\n¡Muchas gracias por tu contribución'
                 f' generosa de ${monto}!\nTu aporte nos ayuda a seguir'
-                ' transformando vidas a través de nuestras iniciativas'
-                ' sociales.\n\nAtentamente,\nEl equipo de Gestor ONG'
+                ' transformando vidas.\n\nAtentamente,\nEl equipo de Gestor'
+                ' ONG'
             ),
             from_email,
             [email],
             fail_silently=True,
         )
-      except Exception:
-        pass
+      except Exception as e:
+        print(f'Error enviando correo: {e}')
 
       messages.success(
           request,
           f'¡Gracias por tu donación, {nombre}! Tu aporte de ${monto} ha'
-          ' sido registrado y hemos enviado el comprobante a tu correo.',
+          ' sido registrado exitosamente.',
       )
 
     else:
+      # Mapeo dinámico de campos para Voluntario
+      datos_voluntario = {'nombre': nombre, 'email': email}
+
       cedula_ingresada = request.POST.get('cedula')
-      cedula_final = (
+      cedula_val = (
           cedula_ingresada if cedula_ingresada else f'VOL-{int(time.time())}'
       )
 
-      voluntario = Voluntario.objects.create(
-          nombre=nombre, email=email, cedula=cedula_final
-      )
+      if hasattr(Voluntario, 'cedula'):
+        datos_voluntario['cedula'] = cedula_val
 
-      # Envío inmediato del correo de bienvenida
+      Voluntario.objects.create(**datos_voluntario)
+
+      # Envío de correo protegido para evitar caída 500
       try:
         send_mail(
             'Bienvenido/a al equipo de Voluntarios - Gestor ONG',
             (
                 f'Hola {nombre},\n\n¡Gracias por registrarte como'
-                ' voluntario/a!\nEstamos entusiasmados de contar con tu apoyo'
-                ' en nuestras próximas actividades.\n\nAtentamente,\nEl equipo'
-                ' de Gestor ONG'
+                ' voluntario/a!\nEstamos entusiasmados de contar con tu'
+                ' apoyo.\n\nAtentamente,\nEl equipo de Gestor ONG'
             ),
             from_email,
             [email],
             fail_silently=True,
         )
-      except Exception:
-        pass
+      except Exception as e:
+        print(f'Error enviando correo: {e}')
 
       messages.success(
           request,
           f'¡Gracias por ser voluntario/a, {nombre}! Te has registrado'
-          ' correctamente y te enviamos la confirmación a tu correo.',
+          ' correctamente.',
       )
 
     return redirect('inicio')
