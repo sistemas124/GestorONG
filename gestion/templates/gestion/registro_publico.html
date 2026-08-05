@@ -3,7 +3,7 @@
 {% block titulo %}Registro - Gestor ONG{% endblock %}
 
 {% block contenido %}
-<!-- Formulario Limpio solo con el Menú Superior -->
+<!-- Formulario Limpio con Habilidades y Horas agregados -->
 <section class="py-5" style="background-color: #f8f9fa; min-height: 80vh;">
   <div class="container d-flex justify-content-center align-items-center" style="min-height: 60vh;">
     <div class="card shadow border-0 p-4" style="max-width: 480px; width: 100%; border-radius: 12px; background: #ffffff;">
@@ -30,6 +30,16 @@
           <label class="font-weight-bold text-dark mb-1">Cédula de Identidad</label>
           <input type="text" name="cedula" class="form-control" required placeholder="Ej. 1712345678">
         </div>
+
+        <div class="form-group mb-3">
+          <label class="font-weight-bold text-dark mb-1">Habilidades</label>
+          <input type="text" name="habilidades" class="form-control" required placeholder="Ej. Psicología, Logística, Docencia">
+        </div>
+
+        <div class="form-group mb-3">
+          <label class="font-weight-bold text-dark mb-1">Horas Aportadas</label>
+          <input type="number" name="horas_aportadas" class="form-control" value="5" min="1" required placeholder="Ej. 10">
+        </div>
         {% else %}
         <div class="form-group mb-3">
           <label class="font-weight-bold text-dark mb-1">Monto a Donar ($)</label>
@@ -53,8 +63,8 @@
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         Swal.fire({
-          icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
-          title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Registro Exitoso!{% endif %}",
+          icon: "{% if message.tags == 'error' or message.tags == 'danger' %}error{% else %}success{% endif %}",
+          title: "{% if message.tags == 'error' or message.tags == 'danger' %}¡Atención!{% else %}¡Registro Exitoso!{% endif %}",
           text: "{{ message|escapejs }}",
           confirmButtonColor: "#f7531d",
           confirmButtonText: "Aceptar"

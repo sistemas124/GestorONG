@@ -3,7 +3,7 @@
 
 {% block extra_css %}
 <style>
-  /* Fuerza espacio para los botones de accion y evita saltos de linea */
+  /* Mantiene los botones alineados y con espacio suficiente sin alterar tus iconos */
   .acciones-col {
     white-space: nowrap !important;
     min-width: 110px !important;
@@ -51,7 +51,7 @@
 
     <div class="row">
       {% if user.is_authenticated and user.is_staff %}
-      <!-- Formulario optimizado a col-lg-3 -->
+      <!-- Formulario en col-lg-3 -->
       <div class="col-12 col-lg-3 mb-4">
         <div class="card shadow-sm p-4 border-0">
           <h4 class="text-primary mb-3">🙋‍♂️ Registrar Voluntario</h4>
@@ -66,7 +66,7 @@
       </div>
       {% endif %}
 
-      <!-- Tabla optimizada a col-lg-9 con espacio extra -->
+      <!-- Tabla en col-lg-9 con espacio amplio -->
       <div class="col-12 {% if user.is_authenticated and user.is_staff %}col-lg-9{% else %}col-lg-12{% endif %}">
         <div class="table-responsive bg-white p-3 shadow-sm rounded">
           <table class="table table-bordered table-hover align-middle mb-0">
@@ -96,16 +96,17 @@
                 <td class="align-middle"><strong>{{ voluntario.horas_aportadas|default:"0" }} hrs</strong></td>
                 {% if user.is_authenticated and user.is_staff %}
                 <td class="text-center align-middle acciones-col">
+                  <!-- Iconos originales de FontAwesome restaurados -->
                   <a href="{% url 'editar_voluntario' voluntario.id %}" 
                      class="btn-action-icon edit-btn" 
                      title="Editar voluntario">
-                     ✏️
+                     <i class="fa-solid fa-pen-to-square"></i>
                   </a>
                   <a href="{% url 'eliminar_voluntario' voluntario.id %}" 
                      class="btn-action-icon delete-btn" 
                      title="Eliminar voluntario"
                      onclick="confirmarEliminacion(event, this.href, '{{ voluntario.nombre|escapejs }}')">
-                     🗑️
+                     <i class="fa-solid fa-trash-can"></i>
                   </a>
                 </td>
                 {% endif %}
