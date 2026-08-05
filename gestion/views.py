@@ -220,7 +220,7 @@ def asignar_voluntario(request):
     return JsonResponse({'status': 'error', 'mensaje': 'Petición inválida.'}, status=400)
 
 
-# --- REGISTRO PÚBLICO ULTRA ROBUTO ---
+# --- REGISTRO PÚBLICO RESISTENTE A FALLOS DE SCHEMA ---
 def registro_publico_view(request):
     tipo = request.GET.get('tipo', 'Voluntario')
     if request.method == 'POST':
@@ -235,16 +235,18 @@ def registro_publico_view(request):
         if tipo == 'Donante':
             monto = request.POST.get('monto', 10)
             
+            campos_donante = {}
+            model_fields = [f.name for f in Donante._meta.get_fields()]
+            
+            if 'nombre' in model_fields: campos_donante['nombre'] = nombre
+            if 'email' in model_fields: campos_donante['email'] = email
+            if 'monto_donado' in model_fields: campos_donante['monto_donado'] = monto
+            if 'monto' in model_fields: campos_donante['monto'] = monto
+
             try:
-                # Intenta guardar dinámicamente según la estructura del modelo Donante
-                donante = Donante()
-                if hasattr(donante, 'nombre'): donante.nombre = nombre
-                if hasattr(donante, 'email'): donante.email = email
-                if hasattr(donante, 'monto_donado'): donante.monto_donado = monto
-                if hasattr(donante, 'monto'): donante.monto = monto
-                donante.save()
+                Donante.objects.create(**campos_donante)
             except Exception as e:
-                print(f"Detalle BD Donante: {e}")
+                print(f"Error BD al crear donante: {e}")
 
             try:
                 send_mail(
@@ -265,16 +267,21 @@ def registro_publico_view(request):
             habilidades_val = request.POST.get('habilidades', 'General')
             horas_val = request.POST.get('horas_aportadas', 5)
 
+            campos_voluntario = {}
+            model_fields = [f.name for f in Voluntario._meta.get_fields()]
+
+            if 'nombre' in model_fields: campos_voluntario['nombre'] = nombre
+            if 'email' in model_fields: campos_voluntario['email'] = email
+            if 'cedula' in model_fields: campos_voluntario['cedula'] = cedula_val
+            if 'habilidades' in model_fields: campos_voluntario['habilidades'] = habilidades_val
+            if 'especialidad' in model_fields: campos_voluntario['especialidad'] = habilidades_val
+            if 'horas_aportadas' in model_fields: campos_voluntario['horas_aportadas'] = horas_val
+            if 'horas' in model_fields: campos_voluntario['horas'] = horas_val
+
             try:
-                voluntario = Voluntario()
-                if hasattr(voluntario, 'nombre'): voluntario.nombre = nombre
-                if hasattr(voluntario, 'email'): voluntario.email = email
-                if hasattr(voluntario, 'cedula'): voluntario.cedula = cedula_val
-                if hasattr(voluntario, 'habilidades'): voluntario.habilidades = habilidades_val
-                if hasattr(voluntario, 'horas_aportadas'): voluntario.horas_aportadas = horas_val
-                voluntario.save()
+                Voluntario.objects.create(**campos_voluntario)
             except Exception as e:
-                print(f"Detalle BD Voluntario: {e}")
+                print(f"Error BD al crear voluntario: {e}")
 
             try:
                 send_mail(
