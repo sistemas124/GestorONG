@@ -6,6 +6,9 @@ urlpatterns = [
     path('', views.inicio_view, name='inicio'),
     path('verificar-admin/', views.verificar_admin_view, name='verificar_admin'),
     
+    # Registro Público
+    path('unirse/', views.registro_publico_view, name='registro_publico'),
+    
     # Voluntarios
     path('voluntarios/', views.lista_voluntarios, name='voluntarios'),
     path('voluntarios/editar/<int:id>/', views.editar_voluntario, name='editar_voluntario'),

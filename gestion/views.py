@@ -70,7 +70,6 @@ def inicio_view(request):
   # 5. EVENTOS PARA FULLCALENDAR (CALENDARIO)
   eventos_calendario = []
   for act in actividades:
-    # Intenta obtener la fecha del objeto o asigna una por defecto en Julio 2026
     fecha_str = (
         act.fecha.strftime('%Y-%m-%d')
         if hasattr(act, 'fecha') and act.fecha
@@ -82,7 +81,6 @@ def inicio_view(request):
         'color': '#f7531d',
     })
 
-  # Si aún no tienes actividades guardadas en la BD, genera estos datos de prueba para julio 2026:
   if not eventos_calendario:
     eventos_calendario = [
         {
@@ -111,7 +109,6 @@ def inicio_view(request):
       'chart_voluntarios_data': json.dumps(chart_voluntarios_data),
       'chart_donantes_labels': json.dumps(chart_donantes_labels),
       'chart_donantes_data': json.dumps(chart_donantes_data),
-      # Pasamos el array de eventos como JSON para el Javascript de FullCalendar
       'eventos_calendario': json.dumps(eventos_calendario),
   }
 
@@ -348,3 +345,29 @@ def asignar_voluntario(request):
   return JsonResponse(
       {'status': 'error', 'mensaje': 'Petición inválida.'}, status=400
   )
+
+
+# --- REGISTRO PÚBLICO (UNIRSE) ---
+def registro_publico_view(request):
+  tipo = request.GET.get('tipo', 'Voluntario')
+
+  if request.method == 'POST':
+    nombre = request.POST.get('nombre')
+    email = request.POST.get('email')
+
+    if tipo == 'Donante':
+      monto = request.POST.get('monto', 10)
+      Donante.objects.create(nombre=nombre, email=email, monto_donado=monto)
+      messages.success(
+          request, f'¡Gracias {nombre}! Tu donación ha sido registrada.'
+      )
+    else:
+      telefono = request.POST.get('telefono', '')
+      Voluntario.objects.create(nombre=nombre, email=email, telefono=telefono)
+      messages.success(
+          request, f'¡Bienvenido/a {nombre}! Te has registrado correctamente.'
+      )
+
+    return redirect('inicio')
+
+  return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
