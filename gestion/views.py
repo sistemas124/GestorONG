@@ -1,10 +1,10 @@
 import json
 import random
 import time
-import resend
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Sum
 from django.http import JsonResponse
@@ -12,12 +12,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import DonanteForm, ProgramaSocialForm, VoluntarioForm
 from .models import Actividad, Donante, ProgramaSocial, TurnoApoyo, Voluntario
-
-# --- CONFIGURACIÓN DE RESEND ---
-resend.api_key = 're_DE8t29ez_9S9mDk4E3w8G5mR3k2L1x9Y7'
-
-# DIRECCIÓN REGISTRADA EN RESEND (Única autorizada para cuentas de prueba sin dominio propio)
-EMAIL_PRUEBAS = 'jeniffer.chicaiza7566@utc.edu.ec'
 
 
 def inicio_view(request):
@@ -101,14 +95,15 @@ def verificar_admin_view(request):
     request.session['codigo_seguridad'] = codigo
 
     try:
-        resend.Emails.send({
-            "from": "Gestor ONG <onboarding@resend.dev>",
-            "to": EMAIL_PRUEBAS,
-            "subject": "Código de Seguridad Administrador - ONG",
-            "html": f"<p>Estimado Administrador,</p><p>Su código de verificación es: <strong>{codigo}</strong></p>"
-        })
+        send_mail(
+            subject='Código de Seguridad Administrador - ONG',
+            message=f'Estimado Administrador,\n\nSu código de verificación es: {codigo}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[getattr(settings, 'EMAIL_HOST_USER', 'danielachicaiza936@gmail.com')],
+            fail_silently=True,
+        )
     except Exception as e:
-        print(f"Error al enviar código admin por Resend: {e}")
+        print(f"Error al enviar código admin: {e}")
 
     return render(request, 'gestion/verificar_admin.html')
 
@@ -121,15 +116,17 @@ def lista_voluntarios(request):
         form = VoluntarioForm(request.POST)
         if form.is_valid():
             voluntario = form.save()
-            try:
-                resend.Emails.send({
-                    "from": "Gestor ONG <onboarding@resend.dev>",
-                    "to": EMAIL_PRUEBAS,
-                    "subject": "Bienvenido a la ONG",
-                    "html": f"<p>Hola <strong>{voluntario.nombre}</strong>,</p><p>Gracias por registrarte como voluntario.</p>"
-                })
-            except Exception as e:
-                print(f"Error correo voluntario por Resend: {e}")
+            if voluntario.email:
+                try:
+                    send_mail(
+                        subject='Bienvenido a la ONG',
+                        message=f'Hola {voluntario.nombre},\n\nGracias por registrarte como voluntario.',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[voluntario.email],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    print(f"Error correo voluntario: {e}")
             messages.success(request, 'Voluntario registrado con éxito.')
             return redirect('voluntarios')
     return render(request, 'gestion/voluntarios.html', {'voluntarios': voluntarios, 'form': form})
@@ -201,15 +198,17 @@ def lista_donantes(request):
         if form.is_valid():
             donante = form.save()
             monto = getattr(donante, "monto_donado", 10)
-            try:
-                resend.Emails.send({
-                    "from": "Gestor ONG <onboarding@resend.dev>",
-                    "to": EMAIL_PRUEBAS,
-                    "subject": "Comprobante de Donación - Gestor ONG",
-                    "html": f"<p>Estimado/a <strong>{donante.nombre}</strong>,</p><p>Hemos recibido con éxito su donación por un valor de <strong>${monto}</strong>. ¡Muchas gracias!</p>"
-                })
-            except Exception as e:
-                print(f"Error correo donante por Resend: {e}")
+            if donante.email:
+                try:
+                    send_mail(
+                        subject='Comprobante de Donación - Gestor ONG',
+                        message=f'Estimado/a {donante.nombre},\n\nHemos recibido con éxito su donación por un valor de ${monto}. ¡Muchas gracias!',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[donante.email],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    print(f"Error correo donante: {e}")
             messages.success(request, 'Donante registrado y correo enviado.')
             return redirect('donantes')
     return render(request, 'gestion/donantes.html', {'donantes': donantes, 'form': form})
@@ -263,7 +262,7 @@ def asignar_voluntario(request):
     return JsonResponse({'status': 'error', 'mensaje': 'Petición inválida.'}, status=400)
 
 
-# --- REGISTRO PÚBLICO CON RESEND ---
+# --- REGISTRO PÚBLICO (ENVÍA AL CORREO DINÁMICO DEL FORMULARIO) ---
 def registro_publico_view(request):
     tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
@@ -288,15 +287,17 @@ def registro_publico_view(request):
                 messages.error(request, f'No se pudo registrar la donación: {e}')
                 return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
 
+            # Envío de correo al destinatario dinámico ingresado en la web
             try:
-                resend.Emails.send({
-                    "from": "Gestor ONG <onboarding@resend.dev>",
-                    "to": EMAIL_PRUEBAS,
-                    "subject": "Confirmación de Donación - Gestor ONG",
-                    "html": f"<p>Hola <strong>{nombre}</strong>,</p><p>¡Muchas gracias por tu contribución generosa de <strong>${monto}</strong>!</p>"
-                })
+                send_mail(
+                    subject='Confirmación de Donación - Gestor ONG',
+                    message=f'Hola {nombre},\n\n¡Muchas gracias por tu contribución generosa de ${monto}!',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=True,
+                )
             except Exception as e:
-                print(f"Error envío donación Resend: {e}")
+                print(f"Error envío donación: {e}")
 
             messages.success(request, f'¡Gracias por tu donación de ${monto}, {nombre}! Registro completado con éxito.')
             return redirect('inicio')
@@ -326,15 +327,17 @@ def registro_publico_view(request):
                 messages.error(request, f'No se pudo completar el registro: {e}')
                 return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
 
+            # Envío de correo al destinatario dinámico ingresado en la web
             try:
-                resend.Emails.send({
-                    "from": "Gestor ONG <onboarding@resend.dev>",
-                    "to": EMAIL_PRUEBAS,
-                    "subject": "Bienvenido/a al equipo de Voluntarios - Gestor ONG",
-                    "html": f"<p>Hola <strong>{nombre}</strong>,</p><p>¡Gracias por registrarte como voluntario/a en nuestra plataforma!</p>"
-                })
+                send_mail(
+                    subject='Bienvenido/a al equipo de Voluntarios - Gestor ONG',
+                    message=f'Hola {nombre},\n\n¡Gracias por registrarte como voluntario/a en nuestra plataforma!',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=True,
+                )
             except Exception as e:
-                print(f"Error envío voluntario Resend: {e}")
+                print(f"Error envío voluntario: {e}")
 
             messages.success(request, f'¡Gracias por ser voluntario/a, {nombre}! Registro completado con éxito.')
             return redirect('inicio')
