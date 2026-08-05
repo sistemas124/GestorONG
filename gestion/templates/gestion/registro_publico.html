@@ -1,67 +1,79 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - Gestor ONG</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- SweetAlert2 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-</head>
-<body class="bg-light d-flex align-items-center justify-content-center min-vh-100">
+{% extends 'gestion/principal.html' %}
+{% load static %}
 
-    <div class="card shadow p-4" style="max-width: 450px; width: 100%; border-radius: 12px;">
-        <h3 class="text-center mb-4 font-weight-bold">Registro como {{ tipo }}</h3>
+{% block titulo %}Registro - Gestor ONG{% endblock %}
 
-        <form method="POST">
-            {% csrf_token %}
-            <input type="hidden" name="tipo" value="{{ tipo }}">
-
-            <div class="mb-3">
-                <label class="form-label text-muted">Nombre Completo</label>
-                <input type="text" name="nombre" class="form-control" required placeholder="Ej. Juan Pérez">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label text-muted">Correo Electrónico</label>
-                <input type="email" name="email" class="form-control" required placeholder="ejemplo@correo.com">
-            </div>
-
-            {% if tipo == 'Voluntario' %}
-            <div class="mb-3">
-                <label class="form-label text-muted">Cédula de Identidad</label>
-                <input type="text" name="cedula" class="form-control" required placeholder="Ej. 1712345678">
-            </div>
-            {% else %}
-            <div class="mb-3">
-                <label class="form-label text-muted">Monto a Donar ($)</label>
-                <input type="number" name="monto" class="form-control" value="10" min="1" required>
-            </div>
-            {% endif %}
-
-            <button type="submit" class="btn w-100 text-white font-weight-bold mt-2" style="background-color: #f7531d; border-radius: 6px;">
-                Completar Registro
-            </button>
-        </form>
+{% block contenido %}
+<!-- Banner Superior -->
+<div class="hero-wrap hero-bread" style="background-image: url('{% static 'images/bg_1.jpg' %}'); padding: 4em 0;">
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row no-gutters slider-text align-items-center justify-content-center">
+      <div class="col-md-9 ftco-animate text-center">
+        <h1 class="mb-0 bread text-white">Registro de {{ tipo }}</h1>
+        <p class="breadcrumbs"><span class="mr-2"><a href="{% url 'inicio' %}" class="text-white">Inicio</a></span> <span class="text-white-50">/ Registro</span></p>
+      </div>
     </div>
+  </div>
+</div>
 
-    <!-- Script de SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Formulario con Menú Superior -->
+<section class="ftco-section bg-light py-5">
+  <div class="container d-flex justify-content-center">
+    <div class="card shadow border-0 p-4" style="max-width: 500px; width: 100%; border-radius: 12px;">
+      <h3 class="text-center mb-4 font-weight-bold" style="color: #232323;">Completar Registro</h3>
 
-    <!-- Captura de mensajes Django -> SweetAlert2 -->
-    {% if messages %}
-        {% for message in messages %}
-            <script>
-                Swal.fire({
-                    icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
-                    title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Registro Completado!{% endif %}",
-                    text: "{{ message|escapejs }}",
-                    confirmButtonColor: "#f7531d",
-                    confirmButtonText: "Entendido"
-                });
-            </script>
-        {% endfor %}
-    {% endif %}
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="tipo" value="{{ tipo }}">
 
-</body>
-</html>
+        <div class="form-group mb-3">
+          <label class="text-muted font-weight-bold">Nombre Completo</label>
+          <input type="text" name="nombre" class="form-control" required placeholder="Ej. Juan Pérez">
+        </div>
+
+        <div class="form-group mb-3">
+          <label class="text-muted font-weight-bold">Correo Electrónico</label>
+          <input type="email" name="email" class="form-control" required placeholder="ejemplo@correo.com">
+        </div>
+
+        {% if tipo == 'Voluntario' %}
+        <div class="form-group mb-3">
+          <label class="text-muted font-weight-bold">Cédula de Identidad</label>
+          <input type="text" name="cedula" class="form-control" required placeholder="Ej. 1712345678">
+        </div>
+        {% else %}
+        <div class="form-group mb-3">
+          <label class="text-muted font-weight-bold">Monto a Donar ($)</label>
+          <input type="number" name="monto" class="form-control" value="10" min="1" required>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary btn-block py-3 font-weight-bold mt-3" style="background-color: #f7531d; border-color: #f7531d; border-radius: 6px;">
+          Completar Registro
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- CDN y Lanzador de SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% if messages %}
+  {% for message in messages %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+          icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+          title: "{% if message.tags == 'error' %}¡Atención!{% else %}¡Excelente!{% endif %}",
+          text: "{{ message|escapejs }}",
+          confirmButtonColor: "#f7531d",
+          confirmButtonText: "Aceptar"
+        });
+      });
+    </script>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}
