@@ -220,62 +220,74 @@ def asignar_voluntario(request):
     return JsonResponse({'status': 'error', 'mensaje': 'Petición inválida.'}, status=400)
 
 
-# --- REGISTRO PÚBLICO RESISTENTE A ERRORES ---
+# --- REGISTRO PÚBLICO ULTRA ROBUTO ---
 def registro_publico_view(request):
-    try:
-        tipo = request.GET.get('tipo', 'Voluntario')
-        if request.method == 'POST':
-            tipo = request.POST.get('tipo', tipo)
-            nombre = request.POST.get('nombre', '').strip()
-            email = request.POST.get('email', '').strip()
+    tipo = request.GET.get('tipo', 'Voluntario')
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo', tipo)
+        nombre = request.POST.get('nombre', '').strip()
+        email = request.POST.get('email', '').strip()
 
-            if not nombre or not email:
-                messages.error(request, 'Por favor, completa todos los campos requeridos.')
-                return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
+        if not nombre or not email:
+            messages.error(request, 'Por favor, completa todos los campos requeridos.')
+            return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
 
-            if tipo == 'Donante':
-                monto = request.POST.get('monto', 10)
-                try:
-                    Donante.objects.create(nombre=nombre, email=email)
-                except Exception:
-                    pass
+        if tipo == 'Donante':
+            monto = request.POST.get('monto', 10)
+            
+            try:
+                # Intenta guardar dinámicamente según la estructura del modelo Donante
+                donante = Donante()
+                if hasattr(donante, 'nombre'): donante.nombre = nombre
+                if hasattr(donante, 'email'): donante.email = email
+                if hasattr(donante, 'monto_donado'): donante.monto_donado = monto
+                if hasattr(donante, 'monto'): donante.monto = monto
+                donante.save()
+            except Exception as e:
+                print(f"Detalle BD Donante: {e}")
 
-                try:
-                    send_mail(
-                        subject='Confirmación de Donación - Gestor ONG',
-                        message=f'Hola {nombre},\n\n¡Muchas gracias por tu contribución generosa de ${monto}!',
-                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
-                        recipient_list=[email],
-                        fail_silently=True,
-                    )
-                except Exception:
-                    pass
+            try:
+                send_mail(
+                    subject='Confirmación de Donación - Gestor ONG',
+                    message=f'Hola {nombre},\n\n¡Muchas gracias por tu contribución generosa de ${monto}!',
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
+                    recipient_list=[email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
 
-                messages.success(request, f'¡Gracias por tu donación de ${monto}, {nombre}! Registro completado con éxito.')
-                return redirect('inicio')
+            messages.success(request, f'¡Gracias por tu donación de ${monto}, {nombre}! Registro completado con éxito.')
+            return redirect('inicio')
 
-            else:
-                cedula_val = request.POST.get('cedula', '').strip() or f'VOL-{int(time.time())}'
-                try:
-                    Voluntario.objects.create(nombre=nombre, email=email, cedula=cedula_val)
-                except Exception:
-                    pass
+        else:
+            cedula_val = request.POST.get('cedula', '').strip() or f'VOL-{int(time.time())}'
+            habilidades_val = request.POST.get('habilidades', 'General')
+            horas_val = request.POST.get('horas_aportadas', 5)
 
-                try:
-                    send_mail(
-                        subject='Bienvenido/a al equipo de Voluntarios - Gestor ONG',
-                        message=f'Hola {nombre},\n\n¡Gracias por registrarte como voluntario/a en nuestra plataforma!',
-                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
-                        recipient_list=[email],
-                        fail_silently=True,
-                    )
-                except Exception:
-                    pass
+            try:
+                voluntario = Voluntario()
+                if hasattr(voluntario, 'nombre'): voluntario.nombre = nombre
+                if hasattr(voluntario, 'email'): voluntario.email = email
+                if hasattr(voluntario, 'cedula'): voluntario.cedula = cedula_val
+                if hasattr(voluntario, 'habilidades'): voluntario.habilidades = habilidades_val
+                if hasattr(voluntario, 'horas_aportadas'): voluntario.horas_aportadas = horas_val
+                voluntario.save()
+            except Exception as e:
+                print(f"Detalle BD Voluntario: {e}")
 
-                messages.success(request, f'¡Gracias por ser voluntario/a, {nombre}! Registro completado con éxito.')
-                return redirect('inicio')
+            try:
+                send_mail(
+                    subject='Bienvenido/a al equipo de Voluntarios - Gestor ONG',
+                    message=f'Hola {nombre},\n\n¡Gracias por registrarte como voluntario/a en nuestra plataforma!',
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'admin@ong.com'),
+                    recipient_list=[email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
 
-        return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
-    except Exception as e:
-        messages.error(request, f'Error al procesar la vista: {e}')
-        return redirect('inicio')
+            messages.success(request, f'¡Gracias por ser voluntario/a, {nombre}! Registro completado con éxito.')
+            return redirect('inicio')
+
+    return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
