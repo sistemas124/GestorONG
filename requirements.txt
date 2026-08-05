@@ -6,3 +6,4 @@ whitenoise
 resend
 openpyxl
 requests
+sendgrid
