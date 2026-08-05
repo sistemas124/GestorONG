@@ -16,8 +16,8 @@ from .models import Actividad, Donante, ProgramaSocial, TurnoApoyo, Voluntario
 # --- CONFIGURACIÓN DE RESEND ---
 resend.api_key = 're_DE8t29ez_9S9mDk4E3w8G5mR3k2L1x9Y7'
 
-# DIRECCIÓN CONFIGURADA PARA RECIBIR LAS PRUEBAS DIRECTAMENTE EN TU GMAIL
-EMAIL_PRUEBAS = 'danielachicaiza936@gmail.com'
+# DIRECCIÓN REGISTRADA EN RESEND (Única autorizada para cuentas de prueba sin dominio propio)
+EMAIL_PRUEBAS = 'jeniffer.chicaiza7566@utc.edu.ec'
 
 
 def inicio_view(request):
@@ -121,11 +121,10 @@ def lista_voluntarios(request):
         form = VoluntarioForm(request.POST)
         if form.is_valid():
             voluntario = form.save()
-            destinatario = voluntario.email if voluntario.email and 'gmail' in voluntario.email else EMAIL_PRUEBAS
             try:
                 resend.Emails.send({
                     "from": "Gestor ONG <onboarding@resend.dev>",
-                    "to": destinatario,
+                    "to": EMAIL_PRUEBAS,
                     "subject": "Bienvenido a la ONG",
                     "html": f"<p>Hola <strong>{voluntario.nombre}</strong>,</p><p>Gracias por registrarte como voluntario.</p>"
                 })
@@ -202,11 +201,10 @@ def lista_donantes(request):
         if form.is_valid():
             donante = form.save()
             monto = getattr(donante, "monto_donado", 10)
-            destinatario = donante.email if donante.email and 'gmail' in donante.email else EMAIL_PRUEBAS
             try:
                 resend.Emails.send({
                     "from": "Gestor ONG <onboarding@resend.dev>",
-                    "to": destinatario,
+                    "to": EMAIL_PRUEBAS,
                     "subject": "Comprobante de Donación - Gestor ONG",
                     "html": f"<p>Estimado/a <strong>{donante.nombre}</strong>,</p><p>Hemos recibido con éxito su donación por un valor de <strong>${monto}</strong>. ¡Muchas gracias!</p>"
                 })
@@ -277,9 +275,6 @@ def registro_publico_view(request):
             messages.error(request, 'Por favor, completa todos los campos requeridos.')
             return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
 
-        # Si el usuario ingresa un Gmail personal en el formulario se envía directamente a ese correo; si ingresa uno de la universidad se redirige a EMAIL_PRUEBAS para evitar bloqueos.
-        correo_destino = email if 'gmail.com' in email else EMAIL_PRUEBAS
-
         if tipo == 'Donante':
             monto = request.POST.get('monto', 10)
             datos_donante = {'nombre': nombre, 'email': email}
@@ -296,7 +291,7 @@ def registro_publico_view(request):
             try:
                 resend.Emails.send({
                     "from": "Gestor ONG <onboarding@resend.dev>",
-                    "to": correo_destino,
+                    "to": EMAIL_PRUEBAS,
                     "subject": "Confirmación de Donación - Gestor ONG",
                     "html": f"<p>Hola <strong>{nombre}</strong>,</p><p>¡Muchas gracias por tu contribución generosa de <strong>${monto}</strong>!</p>"
                 })
@@ -334,7 +329,7 @@ def registro_publico_view(request):
             try:
                 resend.Emails.send({
                     "from": "Gestor ONG <onboarding@resend.dev>",
-                    "to": correo_destino,
+                    "to": EMAIL_PRUEBAS,
                     "subject": "Bienvenido/a al equipo de Voluntarios - Gestor ONG",
                     "html": f"<p>Hola <strong>{nombre}</strong>,</p><p>¡Gracias por registrarte como voluntario/a en nuestra plataforma!</p>"
                 })
