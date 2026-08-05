@@ -350,7 +350,8 @@ def asignar_voluntario(request):
 
 # --- REGISTRO PÚBLICO (UNIRSE) ---
 def registro_publico_view(request):
-  tipo = request.GET.get('tipo', 'Voluntario')
+  # Recupera 'tipo' verificando primero el cuerpo POST y luego la query GET
+  tipo = request.POST.get('tipo', request.GET.get('tipo', 'Voluntario'))
 
   if request.method == 'POST':
     nombre = request.POST.get('nombre')
@@ -360,19 +361,21 @@ def registro_publico_view(request):
       monto = request.POST.get('monto', 10)
       Donante.objects.create(nombre=nombre, email=email, monto_donado=monto)
       messages.success(
-          request, f'¡Gracias {nombre}! Tu donación ha sido registrada.'
+          request,
+          f'¡Gracias por tu donación, {nombre}! Tu aporte de ${monto} ha'
+          ' sido registrado correctamente.',
       )
     else:
       cedula_ingresada = request.POST.get('cedula')
       cedula_final = (
-          cedula_ingresada
-          if cedula_ingresada
-          else f'VOL-{int(time.time())}'
+          cedula_ingresada if cedula_ingresada else f'VOL-{int(time.time())}'
       )
 
       Voluntario.objects.create(nombre=nombre, email=email, cedula=cedula_final)
       messages.success(
-          request, f'¡Bienvenido/a {nombre}! Te has registrado correctamente.'
+          request,
+          f'¡Gracias por ser voluntario/a, {nombre}! Te has registrado'
+          ' correctamente.',
       )
 
     return redirect('inicio')
