@@ -18,7 +18,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-h23vkq14r!ga7m@p^nky_9rz=wwb5ucr5j^x+s1(-7tao--kx1')
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+# --- FORZADO PARA NAVEGAR EL TRACEBACK DE ERRORES ---
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -48,7 +49,7 @@ ROOT_URLCONF = 'GestorONG.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -98,7 +99,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'danielachicaiza936@gmail.com'
-EMAIL_HOST_PASSWORD = 'ucfeagxcvryisqhq'  # Tu clave de aplicación de 16 letras
+EMAIL_HOST_PASSWORD = 'ucfeagxcvryisqhq'
 
 DEFAULT_FROM_EMAIL = f'Gestor ONG <{EMAIL_HOST_USER}>'
 
