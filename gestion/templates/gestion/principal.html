@@ -6,7 +6,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     
-    <!-- Evitar error 404 de favicon -->
+    <!-- Configuración PWA y Favicon -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#f7531d">
     <link rel="shortcut icon" href="#" />
 
     <link href="https://fonts.googleapis.com/css?family=Dosis:200,300,400,500,700" rel="stylesheet">
@@ -306,6 +308,19 @@
         setTimeout(iniciarTour, 300);
       }
     });
+
+    // REGISTRO DEL SERVICE WORKER
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function(reg) {
+            console.log('Service Worker registrado con éxito en el alcance:', reg.scope);
+          })
+          .catch(function(err) {
+            console.error('Error al registrar el Service Worker:', err);
+          });
+      });
+    }
   </script>
   
   {% block extra_js %}{% endblock %}

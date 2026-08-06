@@ -7,7 +7,7 @@ import urllib.request
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import DonanteForm, ProgramaSocialForm, VoluntarioForm
@@ -352,3 +352,14 @@ def registro_publico_view(request):
             return redirect('inicio')
 
     return render(request, 'gestion/registro_publico.html', {'tipo': tipo})
+
+
+# --- VISTAS PARA SERVIR ARCHIVOS DE PWA DIRECTAMENTE ---
+def service_worker(request):
+    sw_path = os.path.join(settings.BASE_DIR, 'GestorONG', 'static', 'sw.js')
+    return FileResponse(open(sw_path, 'rb'), content_type='application/javascript')
+
+
+def manifest(request):
+    manifest_path = os.path.join(settings.BASE_DIR, 'GestorONG', 'static', 'manifest.json')
+    return FileResponse(open(manifest_path, 'rb'), content_type='application/json')

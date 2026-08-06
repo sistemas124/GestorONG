@@ -30,4 +30,8 @@ urlpatterns = [
 
     # NUEVA RUTA PARA AJAX: Asignar voluntario a programa/tarea
     path('asignar-voluntario/', views.asignar_voluntario, name='asignar_voluntario'),
+
+    # RUTAS PWA
+    path('sw.js', views.service_worker, name='service_worker'),
+    path('manifest.json', views.manifest, name='manifest'),
 ]
