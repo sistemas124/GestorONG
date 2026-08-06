@@ -314,41 +314,57 @@
     // Verificar si ya está instalada la app
     const esPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-    if (!esPWA) {
-      // Capturar evento para mostrar el banner superior
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (bannerPWA) {
-          bannerPWA.style.display = 'flex'; // Muestra el banner flotante arriba
-        }
-      });
+    // Detección de dispositivos iOS (iPhone / iPad)
+    const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-      if (btnInstalarBanner) {
-        btnInstalarBanner.addEventListener('click', () => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-              if (choiceResult.outcome === 'accepted') {
-                console.log('El usuario aceptó instalar la PWA');
-              }
-              deferredPrompt = null;
-              bannerPWA.style.display = 'none';
-            });
+    if (!esPWA) {
+      if (esIOS) {
+        // Notificación de guía de instalación específica para usuarios de iPhone
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            title: '¡Instala Gestor ONG!',
+            text: 'Para agregar esta aplicación a tu iPhone: toca el botón "Compartir" de Safari (📤) y luego selecciona "Agregar a inicio".',
+            icon: 'info',
+            confirmButtonColor: '#f7531d',
+            confirmButtonText: 'Entendido'
+          });
+        }
+      } else {
+        // Capturar evento para Android/PC y mostrar el banner flotante superior
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          if (bannerPWA) {
+            bannerPWA.style.display = 'flex'; // Muestra el banner flotante arriba
           }
         });
-      }
 
-      if (btnCerrarBanner) {
-        btnCerrarBanner.addEventListener('click', () => {
-          bannerPWA.style.display = 'none';
+        if (btnInstalarBanner) {
+          btnInstalarBanner.addEventListener('click', () => {
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                  console.log('El usuario aceptó instalar la PWA');
+                }
+                deferredPrompt = null;
+                bannerPWA.style.display = 'none';
+              });
+            }
+          });
+        }
+
+        if (btnCerrarBanner) {
+          btnCerrarBanner.addEventListener('click', () => {
+            bannerPWA.style.display = 'none';
+          });
+        }
+
+        window.addEventListener('appinstalled', () => {
+          if (bannerPWA) bannerPWA.style.display = 'none';
+          console.log('PWA instalada con éxito');
         });
       }
-
-      window.addEventListener('appinstalled', () => {
-        if (bannerPWA) bannerPWA.style.display = 'none';
-        console.log('PWA instalada con éxito');
-      });
     }
 
     // --- 1. RENDERIZADO DE GRÁFICOS (CHART.JS) CON DATOS DE DJANGO ---
