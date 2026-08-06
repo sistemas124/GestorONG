@@ -4,8 +4,8 @@
 {% block titulo %}Inicio - Gestor ONG{% endblock %}
 
 {% block extra_css %}
-<!-- PWA Meta tags y Manifest desde ruta raíz -->
-<link rel="manifest" href="/manifest.json">
+<!-- PWA Meta tags y Manifest -->
+<link rel="manifest" href="{% static 'manifest.json' %}">
 <meta name="theme-color" content="#f7531d">
 <link rel="apple-touch-icon" href="{% static 'images/icon-192.png' %}">
 
@@ -210,7 +210,7 @@
     
     // --- 0. REGISTRO DE SERVICE WORKER E INSTALACIÓN PWA ---
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register("/sw.js")
+      navigator.serviceWorker.register("{% static 'sw.js' %}", { scope: '/' })
         .then(reg => console.log('Service Worker registrado correctamente.', reg.scope))
         .catch(err => console.error('Error al registrar Service Worker:', err));
     }
@@ -242,7 +242,6 @@
     }
 
     // --- 1. RENDERIZADO DE GRÁFICOS (CHART.JS) CON DATOS DE DJANGO ---
-    
     const labelsVoluntarios = {{ chart_voluntarios_labels|safe|default:"['Juan Pérez', 'María López', 'Carlos Ruiz', 'Ana Gómez']" }};
     const dataHoras = {{ chart_voluntarios_data|safe|default:"[35, 28, 42, 15]" }};
 
@@ -289,7 +288,7 @@
       }
     });
 
-    // --- 2. FullCalendar (CONECTADO A VISTA DJANGO) ---
+    // --- 2. FullCalendar ---
     var calendarEl = document.getElementById('calendar');
     if (calendarEl) {
       var eventosDesdeDjango = {{ eventos_calendario|safe|default:"[]" }};
