@@ -31,8 +31,8 @@
             <i class="fa-solid fa-circle-dollar-to-slot mr-2"></i>Hacer Donación
           </a>
           
-          <!-- BOTÓN PARA INSTALAR APP (PWA) -->
-          <button id="btnInstalarPWA" class="btn btn-warning text-white px-4 py-3 mr-2 mb-2" style="background-color: #ff9800; border-color: #ff9800;">
+          <!-- BOTÓN PARA INSTALAR APP (PWA) - Oculto por defecto -->
+          <button id="btnInstalarPWA" class="btn btn-warning text-white px-4 py-3 mr-2 mb-2" style="display: none; background-color: #ff9800; border-color: #ff9800;">
             <i class="fa-solid fa-download mr-2"></i>Instalar App
           </button>
 
@@ -218,12 +218,17 @@
     let deferredPrompt;
     const btnInstalar = document.getElementById('btnInstalarPWA');
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-    });
+    // Comprobar si la App ya fue instalada o está abierta en modo independiente
+    const esPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-    if (btnInstalar) {
+    if (!esPWA && btnInstalar) {
+      // Muestra el botón ÚNICAMENTE cuando el navegador confirma que la PWA es instalable
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        btnInstalar.style.display = 'inline-block';
+      });
+
       btnInstalar.addEventListener('click', () => {
         if (deferredPrompt) {
           deferredPrompt.prompt();
@@ -232,22 +237,15 @@
               console.log('El usuario aceptó instalar la PWA');
             }
             deferredPrompt = null;
-          });
-        } else {
-          Swal.fire({
-            icon: 'info',
-            title: '📲 Instalación de la App',
-            html: `
-              <p>Para instalar esta App en tu dispositivo:</p>
-              <ul style="text-align: left;">
-                <li><b>En Google Chrome / Edge (PC):</b> Haz clic en el icono de instalación <i class="fa-solid fa-download"></i> en la barra de direcciones.</li>
-                <li><b>En Celulares (Android/iOS):</b> Toca el menú de opciones (3 puntos o compartir) y selecciona <b>"Agregar a la pantalla de inicio"</b>.</li>
-              </ul>
-            `,
-            confirmButtonColor: '#f7531d',
-            confirmButtonText: 'Entendido'
+            btnInstalar.style.display = 'none';
           });
         }
+      });
+
+      // Oculta el botón inmediatamente si el usuario completa la instalación
+      window.addEventListener('appinstalled', () => {
+        btnInstalar.style.display = 'none';
+        console.log('PWA instalada con éxito');
       });
     }
 
