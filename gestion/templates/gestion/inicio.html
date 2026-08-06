@@ -4,6 +4,11 @@
 {% block titulo %}Inicio - Gestor ONG{% endblock %}
 
 {% block extra_css %}
+<!-- PWA Meta tags y Manifest -->
+<link rel="manifest" href="{% static 'manifest.json' %}">
+<meta name="theme-color" content="#f7531d">
+<link rel="apple-touch-icon" href="{% static 'images/icon-192.png' %}">
+
 <!-- Estilos específicos requeridos para Drag & Drop -->
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 {% endblock %}
@@ -17,7 +22,7 @@
       <div class="col-md-8 ftco-animate text-center">
         <h1 class="mb-4">Transformando Vidas a través del Voluntariado</h1>
         
-        <!-- BOTONES DE REGISTRO PÚBLICO -->
+        <!-- BOTONES DE REGISTRO PÚBLICO Y DESCARGA PWA -->
         <p class="d-flex flex-wrap justify-content-center gap-2 mt-3">
           <a href="/unirse/?tipo=Voluntario" class="btn btn-primary px-4 py-3 mr-2 mb-2" style="background-color: #f7531d; border-color: #f7531d;">
             <i class="fa-solid fa-hand-holding-heart mr-2"></i>Quiero ser Voluntario
@@ -25,6 +30,12 @@
           <a href="/unirse/?tipo=Donante" class="btn btn-success px-4 py-3 mr-2 mb-2">
             <i class="fa-solid fa-circle-dollar-to-slot mr-2"></i>Hacer Donación
           </a>
+          
+          <!-- BOTÓN PARA INSTALAR APP (PWA) -->
+          <button id="btnInstalarPWA" class="btn btn-warning text-white px-4 py-3 mr-2 mb-2" style="display: none; background-color: #ff9800; border-color: #ff9800;">
+            <i class="fa-solid fa-download mr-2"></i>Instalar App
+          </button>
+
           <a href="#" onclick="iniciarTour(); return false;" class="btn btn-white btn-outline-white px-4 py-3 mb-2">
             <span class="icon-play mr-2"></span>Iniciar Tour
           </a>
@@ -197,6 +208,39 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     
+    // --- 0. REGISTRO DE SERVICE WORKER E INSTALACIÓN PWA ---
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register("{% static 'sw.js' %}")
+        .then(reg => console.log('Service Worker registrado correctamente.', reg.scope))
+        .catch(err => console.error('Error al registrar Service Worker:', err));
+    }
+
+    let deferredPrompt;
+    const btnInstalar = document.getElementById('btnInstalarPWA');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (btnInstalar) {
+        btnInstalar.style.display = 'inline-block';
+      }
+    });
+
+    if (btnInstalar) {
+      btnInstalar.addEventListener('click', () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('El usuario aceptó instalar la PWA');
+            }
+            deferredPrompt = null;
+            btnInstalar.style.display = 'none';
+          });
+        }
+      });
+    }
+
     // --- 1. RENDERIZADO DE GRÁFICOS (CHART.JS) CON DATOS DE DJANGO ---
     
     const labelsVoluntarios = {{ chart_voluntarios_labels|safe|default:"['Juan Pérez', 'María López', 'Carlos Ruiz', 'Ana Gómez']" }};

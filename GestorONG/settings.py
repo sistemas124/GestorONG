@@ -85,7 +85,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- CONFIGURACIÓN DE CORREO (Gestionado vía API HTTP en views.py) ---
-EMAIL_HOST_USER = 'jeniffer.chicaiza756@gmail.com'
+EMAIL_HOST_USER = 'jeniffer.chicaiza7566@utc.edu.ec'
 DEFAULT_FROM_EMAIL = 'Gestor ONG <onboarding@resend.dev>'
 
 LOGIN_REDIRECT_URL = 'inicio'

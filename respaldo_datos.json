@@ -1,0 +1,82 @@
+[
+{
+    "model": "auth.user",
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$Y8sR7De0NIiJAM8a1qWkfK$m0Kq6Yeuwm0ULP+ggaV4uq8HOOrGx8Sst6r4lccajN0=",
+        "last_login": "2026-07-29T02:54:18.135Z",
+        "is_superuser": true,
+        "username": "Admin",
+        "first_name": "",
+        "last_name": "",
+        "email": "jeniffer.chicaiza7566@utc.edu.ec",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2026-07-29T00:39:05.722Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "gestion.programasocial",
+    "pk": 1,
+    "fields": {
+        "nombre": "Cruz Roja Voluntariado",
+        "descripcion": "Red mundial de ayuda humanitaria en desastres.",
+        "meta_beneficiarios": 30
+    }
+},
+{
+    "model": "gestion.voluntario",
+    "pk": 1,
+    "fields": {
+        "nombre": "Jessica",
+        "cedula": "1807898765",
+        "email": "jeniffer.chicaiza7566@utc.edu.ec",
+        "habilidades": "Medicina",
+        "horas_aportadas": 5
+    }
+},
+{
+    "model": "gestion.voluntario",
+    "pk": 2,
+    "fields": {
+        "nombre": "Gabriela",
+        "cedula": "1867564534",
+        "email": "jeniffer.chicaiza7566@utc.edu.ec",
+        "habilidades": "Logistica",
+        "horas_aportadas": 10
+    }
+},
+{
+    "model": "gestion.voluntario",
+    "pk": 3,
+    "fields": {
+        "nombre": "Fernando",
+        "cedula": "1756764534",
+        "email": "jeniffer.chicaiza7566@utc.edu.ec",
+        "habilidades": "Medicina",
+        "horas_aportadas": 10
+    }
+},
+{
+    "model": "gestion.voluntario",
+    "pk": 4,
+    "fields": {
+        "nombre": "Jose Lopez",
+        "cedula": "187856754",
+        "email": "jeniffer.chicaiza7566@utc.edu.ec",
+        "habilidades": "Medicina",
+        "horas_aportadas": 3
+    }
+},
+{
+    "model": "gestion.donante",
+    "pk": 1,
+    "fields": {
+        "nombre": "Jeniffer",
+        "email": "jeniffer.chicaiza7566@utc.edu.ec",
+        "monto_donado": "30.00",
+        "fecha_donacion": "2026-07-28"
+    }
+}
+]
