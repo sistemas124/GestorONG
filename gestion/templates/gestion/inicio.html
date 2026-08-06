@@ -32,7 +32,7 @@
           </a>
           
           <!-- BOTÓN PARA INSTALAR APP (PWA) -->
-          <button id="btnInstalarPWA" class="btn btn-warning text-white px-4 py-3 mr-2 mb-2" style="display: none; background-color: #ff9800; border-color: #ff9800;">
+          <button id="btnInstalarPWA" class="btn btn-warning text-white px-4 py-3 mr-2 mb-2" style="background-color: #ff9800; border-color: #ff9800;">
             <i class="fa-solid fa-download mr-2"></i>Instalar App
           </button>
 
@@ -221,9 +221,6 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      if (btnInstalar) {
-        btnInstalar.style.display = 'inline-block';
-      }
     });
 
     if (btnInstalar) {
@@ -235,7 +232,20 @@
               console.log('El usuario aceptó instalar la PWA');
             }
             deferredPrompt = null;
-            btnInstalar.style.display = 'none';
+          });
+        } else {
+          Swal.fire({
+            icon: 'info',
+            title: '📲 Instalación de la App',
+            html: `
+              <p>Para instalar esta App en tu dispositivo:</p>
+              <ul style="text-align: left;">
+                <li><b>En Google Chrome / Edge (PC):</b> Haz clic en el icono de instalación <i class="fa-solid fa-download"></i> en la barra de direcciones.</li>
+                <li><b>En Celulares (Android/iOS):</b> Toca el menú de opciones (3 puntos o compartir) y selecciona <b>"Agregar a la pantalla de inicio"</b>.</li>
+              </ul>
+            `,
+            confirmButtonColor: '#f7531d',
+            confirmButtonText: 'Entendido'
           });
         }
       });
